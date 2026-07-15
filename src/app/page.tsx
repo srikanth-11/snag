@@ -1,49 +1,6 @@
 import Link from "next/link";
-
-function Hook({ className = "" }: { className?: string }) {
-  // The brand glyph: a caught thread / hook notch.
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="none">
-      <path
-        d="M6 3v9a6 6 0 0 0 12 0"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function Wordmark() {
-  return (
-    <span className="inline-flex items-center gap-1.5 font-display text-xl font-bold tracking-tight">
-      <Hook className="h-5 w-5 text-ember" />
-      snag
-    </span>
-  );
-}
-
-function Nav() {
-  return (
-    <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
-      <Wordmark />
-      <nav className="flex items-center gap-2 text-sm">
-        <Link
-          href="/login"
-          className="rounded-md px-3 py-1.5 text-smoke transition-colors hover:text-bone"
-        >
-          Log in
-        </Link>
-        <Link
-          href="/login"
-          className="rounded-md bg-ember px-3.5 py-1.5 font-medium text-void transition-opacity hover:opacity-90"
-        >
-          Try it
-        </Link>
-      </nav>
-    </header>
-  );
-}
+import Nav from "@/components/Nav";
+import { Hook, Wordmark } from "@/components/brand";
 
 function Note({
   tone,
