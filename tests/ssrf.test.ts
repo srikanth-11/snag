@@ -28,4 +28,24 @@ describe("isSafeTarget", () => {
   it("rejects bare hosts with no dot", async () => {
     expect((await isSafeTarget("http://intranet")).ok).toBe(false);
   });
+
+  it("rejects IPv6 loopback and unspecified", async () => {
+    expect((await isSafeTarget("http://[::1]")).ok).toBe(false);
+    expect((await isSafeTarget("http://[::]")).ok).toBe(false);
+  });
+
+  it("rejects IPv4-mapped IPv6 pointing at loopback", async () => {
+    expect((await isSafeTarget("http://[::ffff:127.0.0.1]")).ok).toBe(false);
+  });
+
+  it("rejects IPv6 unique-local and link-local", async () => {
+    expect((await isSafeTarget("http://[fd00::1]")).ok).toBe(false);
+    expect((await isSafeTarget("http://[fe80::1]")).ok).toBe(false);
+  });
+
+  it("rejects numeric/hex/short-form IPv4 encodings", async () => {
+    expect((await isSafeTarget("http://2130706433")).ok).toBe(false); // 127.0.0.1
+    expect((await isSafeTarget("http://0x7f000001")).ok).toBe(false);
+    expect((await isSafeTarget("http://127.1")).ok).toBe(false);
+  });
 });
