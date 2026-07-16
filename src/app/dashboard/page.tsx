@@ -3,6 +3,13 @@ import { redirect } from "next/navigation";
 import Nav from "@/components/Nav";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabase } from "@/lib/env";
+import { listUserJobs } from "@/lib/db";
+
+function statusTone(status: string): string {
+  if (status === "done") return "text-proof";
+  if (status === "error") return "text-ember";
+  return "text-smoke";
+}
 
 export default async function DashboardPage() {
   if (!hasSupabase) redirect("/login");
@@ -11,6 +18,8 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/dashboard");
+
+  const jobs = await listUserJobs(supabase, user.id);
 
   return (
     <>
@@ -29,9 +38,36 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        <div className="mt-8 rounded-xl border border-edge bg-ash/40 p-10 text-center text-smoke">
-          No hunts yet. Paste a URL on the home page to run your first one.
-        </div>
+        {jobs.length === 0 ? (
+          <div className="mt-8 rounded-xl border border-edge bg-ash/40 p-10 text-center text-smoke">
+            No hunts yet. Paste a URL on the home page to run your first one.
+          </div>
+        ) : (
+          <ul className="mt-8 divide-y divide-[color:var(--edge)] overflow-hidden rounded-xl border border-edge bg-ash/40">
+            {jobs.map((j) => {
+              const running = j.status === "running" || j.status === "queued";
+              return (
+                <li key={j.id}>
+                  <Link
+                    href={running ? `/hunt/${j.id}` : `/report/${j.id}`}
+                    className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-ash/60"
+                  >
+                    <span className="min-w-0 flex-1 truncate font-mono text-sm text-bone">
+                      {j.url}
+                    </span>
+                    <span className="hidden text-xs text-smoke sm:inline">
+                      {new Date(j.createdAt).toLocaleDateString()}
+                    </span>
+                    <span className="text-xs text-smoke">
+                      {j.findingCount} {j.findingCount === 1 ? "snag" : "snags"}
+                    </span>
+                    <span className={`font-mono text-xs ${statusTone(j.status)}`}>{j.status}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </main>
     </>
   );

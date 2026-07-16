@@ -1,5 +1,5 @@
-import Link from "next/link";
 import Nav from "@/components/Nav";
+import UrlLauncher from "@/components/UrlLauncher";
 import { Hook, Wordmark } from "@/components/brand";
 
 function Note({
@@ -61,39 +61,6 @@ function Stage() {
   );
 }
 
-function Launcher() {
-  return (
-    <div id="try" className="mx-auto mt-10 w-full max-w-xl">
-      <form action="/login" className="flex gap-2">
-        <input
-          name="url"
-          inputMode="url"
-          placeholder="https://your-app.com"
-          className="min-w-0 flex-1 rounded-lg border border-edge bg-ash px-4 py-3 font-mono text-sm text-bone placeholder:text-smoke/70 focus:border-proof/60"
-        />
-        <button
-          type="submit"
-          className="shrink-0 rounded-lg bg-ember px-5 py-3 font-medium text-void transition-opacity hover:opacity-90"
-        >
-          Run Snag
-        </button>
-      </form>
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-smoke">
-        <span>try:</span>
-        {["demo-shop", "demo-docs", "demo-dash"].map((d) => (
-          <Link
-            key={d}
-            href="/login"
-            className="rounded-full border border-edge px-3 py-1 font-mono text-xs text-bone transition-colors hover:border-proof/50 hover:text-proof"
-          >
-            {d}
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function HowItWorks() {
   const steps = [
     {
@@ -143,7 +110,7 @@ export default function Home() {
           <div className="mt-12">
             <Stage />
           </div>
-          <Launcher />
+          <UrlLauncher />
         </section>
 
         <HowItWorks />
