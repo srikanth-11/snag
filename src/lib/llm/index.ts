@@ -26,6 +26,10 @@ export interface ThinkOptions {
   providers?: Provider[];
 }
 
+// Narrowed think signature for call sites that cast the result themselves.
+// Lets detect/skeptic take an injectable model fn without generic gymnastics.
+export type ThinkJson = (args: { prompt: string; imageB64?: string }) => Promise<unknown>;
+
 // Try providers in order; on any error (429, network, bad JSON) fall to the next.
 // Returns the first provider's validly-parsed object. Throws only if all fail.
 export async function think<T = unknown>({
