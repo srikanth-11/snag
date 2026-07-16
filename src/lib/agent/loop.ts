@@ -24,6 +24,15 @@ export interface HuntOptions {
   think: ThinkFn;
   maxSteps?: number;
   saveShot?: (step: number, imageB64: string) => Promise<string>;
+  /**
+   * Optional soft-failure pass, run every 5 steps. Should return findings that
+   * are already skeptic-screened (the orchestrator wires detect + skeptic here).
+   */
+  inspect?: (args: {
+    imageB64: string;
+    url: string;
+    actions: Action[];
+  }) => Promise<Finding[]>;
 }
 
 function titleFor(ev: Evidence): string {
@@ -107,6 +116,21 @@ export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
       const finding = hardFinding(ev, actions, shotPath);
       findings.push(finding);
       await emit({ type: "finding", finding });
+    }
+
+    if (opts.inspect && n % 5 === 0) {
+      const soft = await opts.inspect({
+        imageB64,
+        url: driver.currentUrl(),
+        actions,
+      });
+      for (const sf of soft) {
+        const seenKey = `soft:${sf.title}`;
+        if (seenEvidence.has(seenKey)) continue;
+        seenEvidence.add(seenKey);
+        findings.push(sf);
+        await emit({ type: "finding", finding: sf });
+      }
     }
 
     if (fresh === 0 && visited.size === beforeUrls) idle++;
