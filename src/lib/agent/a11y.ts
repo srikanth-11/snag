@@ -36,7 +36,9 @@ interface AxeViolation {
 // landmarks, link/button names, and more.
 export async function runAxe(page: Page): Promise<Finding[]> {
   try {
-    await page.addScriptTag({ content: axe.source });
+    // Inject axe by evaluating its source (bypasses target CSP that would block
+    // an injected <script> tag), then run it in the same context.
+    await page.evaluate(axe.source);
     const results = (await page.evaluate(async () => {
       const w = window as unknown as {
         axe: { run: (ctx: Document, opts: unknown) => Promise<unknown> };
