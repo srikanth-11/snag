@@ -47,7 +47,14 @@ export async function startHunt(input: {
       persona,
       driver,
       emit,
-      think: (a) => think<Action>({ prompt: a.prompt, imageB64: a.imageB64 }),
+      think: async (a) => {
+        try {
+          return await think<Action>({ prompt: a.prompt, imageB64: a.imageB64 });
+        } catch (e) {
+          console.error("[hunt] think failed:", e instanceof Error ? e.message : e);
+          throw e;
+        }
+      },
       saveShot: (n, b64) => uploadShot(jobId, n, b64),
       inspect: async (a) =>
         screenFindings(

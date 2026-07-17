@@ -104,6 +104,12 @@ export async function isSafeTarget(raw: string): Promise<SafeTarget> {
     return { ok: false, reason: "Only http and https URLs are supported" };
   }
 
+  // Dev-only escape hatch so the agent can hunt the local seed targets.
+  // Never set in production — the private-range checks below stay in force there.
+  if (process.env.SNAG_ALLOW_LOCAL_TARGETS === "1") {
+    return { ok: true, url: u.toString() };
+  }
+
   const host = u.hostname.toLowerCase();
   const block: SafeTarget = {
     ok: false,

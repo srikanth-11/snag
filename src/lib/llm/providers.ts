@@ -76,8 +76,9 @@ function openaiCompat(name: string, baseUrl: string, model: string, key: string)
 export function defaultProviders(): Provider[] {
   const chain: Provider[] = [];
   if (env.geminiKey) {
-    chain.push(gemini("gemini-3-flash", env.geminiKey));
-    chain.push(gemini("gemini-2.5-flash-lite", env.geminiKey));
+    // 2.5 models are blocked for new API keys; these are the current free ones.
+    chain.push(gemini("gemini-3-flash-preview", env.geminiKey));
+    chain.push(gemini("gemini-flash-lite-latest", env.geminiKey));
   }
   if (env.nvidiaKey)
     chain.push(
