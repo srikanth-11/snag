@@ -1,6 +1,12 @@
 import type { Page, Locator } from "playwright";
 import type { Action } from "@/lib/types";
 
+// Third-party sign-in buttons the agent must never click — they lead off-site to
+// an OAuth provider (Google/Clever/…) and abandon the app under test. Email/
+// password login is handled deterministically before the hunt starts.
+const SSO_BUTTON =
+  /sign ?in with|log ?in with|continue with|\b(clever|google|apple|microsoft|facebook|okta|saml|sso)\b/i;
+
 // Resolve a target string to a visible element, tolerant of how the model names it.
 async function locate(page: Page, target?: string): Promise<Locator | null> {
   if (!target) return null;
@@ -32,6 +38,9 @@ export async function execute(page: Page, action: Action): Promise<void> {
         await page.goto(action.value, { waitUntil: "domcontentloaded", timeout: 15000 });
       break;
     case "click": {
+      if (SSO_BUTTON.test(action.target ?? "")) {
+        throw new Error(`refusing third-party sign-in: "${action.target}"`);
+      }
       const el = await locate(page, action.target);
       if (!el) throw new Error(`no element for "${action.target}"`);
       await el.click({ timeout: 3000 });
