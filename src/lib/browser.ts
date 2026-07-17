@@ -110,6 +110,10 @@ export async function createPlaywrightDriver(url: string, auth?: HuntAuth): Prom
 
   const obs = attachObservers(page);
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 }).catch(() => {});
+  // Let heavy SPA content render before the first screenshot, so the agent
+  // doesn't judge a still-loading page as broken.
+  await page.waitForLoadState("networkidle", { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(1200).catch(() => {});
 
   return {
     currentUrl: () => page.url(),
