@@ -1,6 +1,28 @@
 import type { Page, Locator } from "playwright";
 import type { HuntAuth } from "@/lib/types";
 
+const USER_SELECTORS = [
+  'input[type="email"]',
+  'input[autocomplete="username"]',
+  'input[name*="email" i]',
+  'input[name*="user" i]',
+  'input[id*="email" i]',
+  'input[id*="user" i]',
+  'input[placeholder*="email" i]',
+  'input[placeholder*="user" i]',
+  'input[type="text"]',
+];
+const PASS_SELECTORS = [
+  'input[type="password"]',
+  'input[autocomplete="current-password"]',
+  'input[name*="pass" i]',
+  'input[placeholder*="password" i]',
+];
+
+// Matches SSO buttons ("Sign in with Google/Clever/…") so we never treat one as
+// the email/password submit.
+const SSO = /with|google|clever|apple|microsoft|facebook|okta|saml|sso/i;
+
 async function firstVisible(page: Page, selectors: string[]): Promise<Locator | null> {
   for (const sel of selectors) {
     try {
@@ -14,32 +36,35 @@ async function firstVisible(page: Page, selectors: string[]): Promise<Locator | 
 }
 
 // Deterministic login before the hunt: fill the username + password fields and
-// submit. Credentials never touch the LLM — this is plain browser automation.
+// submit the email/password form (not an SSO button). Credentials never touch
+// the LLM — this is plain browser automation.
 export async function attemptLogin(
   page: Page,
   auth: HuntAuth,
 ): Promise<{ ok: boolean; reason?: string }> {
-  const userField = await firstVisible(page, [
-    'input[type="email"]',
-    'input[autocomplete="username"]',
-    'input[name*="email" i]',
-    'input[name*="user" i]',
-    'input[id*="email" i]',
-    'input[id*="user" i]',
-    'input[type="text"]',
-  ]);
-  const passField = await firstVisible(page, [
-    'input[type="password"]',
-    'input[autocomplete="current-password"]',
-    'input[name*="pass" i]',
-  ]);
+  let passField = await firstVisible(page, PASS_SELECTORS);
 
-  if (!userField || !passField) {
-    return { ok: false, reason: "couldn't find the login fields on that page" };
+  // Some pages hide the email/password form behind a toggle (SSO-first). Reveal it.
+  if (!passField) {
+    const reveal = page
+      .getByRole("button", {
+        name: /e-?mail|use email|sign ?in with email|continue with email|use password|log ?in with email/i,
+      })
+      .filter({ hasNotText: SSO })
+      .first();
+    if (await reveal.isVisible({ timeout: 800 }).catch(() => false)) {
+      await reveal.click({ timeout: 3000 }).catch(() => {});
+      await page.waitForTimeout(600);
+      passField = await firstVisible(page, PASS_SELECTORS);
+    }
   }
 
-  // Type key-by-key (not fill) so controlled React/Vue inputs fire their change
-  // handlers and update state — otherwise the form submits with empty values.
+  const userField = await firstVisible(page, USER_SELECTORS);
+  if (!userField || !passField) {
+    return { ok: false, reason: "couldn't find the email/password fields on that page" };
+  }
+
+  // Type key-by-key (not fill) so controlled React/Vue inputs update their state.
   try {
     await userField.click({ timeout: 3000 }).catch(() => {});
     await userField.fill("");
@@ -51,13 +76,18 @@ export async function attemptLogin(
     return { ok: false, reason: "couldn't type into the login fields" };
   }
 
-  const submit =
-    (await firstVisible(page, ['button[type="submit"]', 'input[type="submit"]'])) ??
-    page.getByRole("button", { name: /log ?in|sign ?in|continue|submit|next/i }).first();
-
+  // Submit via the plain submit button — an exact-ish "Sign in"/"Log in" that is
+  // NOT an SSO button — else press Enter inside the password field.
+  const submit = page
+    .getByRole("button", { name: /^\s*(sign ?in|log ?in|continue|submit|next)\s*$/i })
+    .filter({ hasNotText: SSO })
+    .first();
   try {
-    if (submit) await submit.click({ timeout: 5000 });
-    else await passField.press("Enter");
+    if (await submit.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await submit.click({ timeout: 5000 });
+    } else {
+      await passField.press("Enter");
+    }
   } catch {
     await passField.press("Enter").catch(() => {});
   }
