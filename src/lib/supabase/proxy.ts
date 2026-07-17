@@ -10,7 +10,7 @@ export async function updateSession(request: NextRequest) {
   // No keys yet? Let the app render — auth is simply inert until configured.
   if (!hasSupabase) return response;
 
-  const supabase = createServerClient(env.supabaseUrl, env.supabaseAnonKey, {
+  const supabase = createServerClient(env.supabaseUrl, env.supabasePublishableKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();

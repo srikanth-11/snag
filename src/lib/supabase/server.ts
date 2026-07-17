@@ -5,7 +5,7 @@ import { env } from "@/lib/env";
 // Server-side Supabase client bound to the request's cookies (Next 16: cookies() is async).
 export async function createClient() {
   const cookieStore = await cookies();
-  return createServerClient(env.supabaseUrl, env.supabaseAnonKey, {
+  return createServerClient(env.supabaseUrl, env.supabasePublishableKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
