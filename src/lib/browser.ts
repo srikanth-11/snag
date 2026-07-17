@@ -10,10 +10,11 @@ let browser: Browser | null = null;
 export async function getBrowser(): Promise<Browser> {
   if (browser && browser.isConnected()) return browser;
   browser = await chromium.launch({
-    headless: true,
+    // Some sites' login flows only work in a headed browser; on the server this
+    // runs headed under a virtual display (xvfb). SNAG_HEADFUL=1 forces headed.
+    headless: process.env.SNAG_HEADFUL !== "1",
     args: [
       "--disable-dev-shm-usage",
-      "--disable-gpu",
       "--no-sandbox",
       "--js-flags=--max-old-space-size=256",
     ],
@@ -81,7 +82,17 @@ async function axDigestInner(page: Page): Promise<string> {
 // against the app behind the login wall.
 export async function createPlaywrightDriver(url: string, auth?: HuntAuth): Promise<Driver> {
   const b = await getBrowser();
-  const context = await b.newContext({ viewport: { width: 1100, height: 800 } });
+  // Present as a normal desktop Chrome — some sites (especially their login/auth
+  // flow) reject the default "HeadlessChrome" UA and the webdriver flag.
+  const context = await b.newContext({
+    viewport: { width: 1280, height: 800 },
+    userAgent:
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    locale: "en-US",
+  });
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, "webdriver", { get: () => false });
+  });
   const page = await context.newPage();
 
   // Log in before observers attach, so the login page's own noise isn't

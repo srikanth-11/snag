@@ -1,17 +1,6 @@
 import type { Page, Locator } from "playwright";
 import type { HuntAuth } from "@/lib/types";
 
-const USER_SELECTORS = [
-  'input[type="email"]',
-  'input[autocomplete="username"]',
-  'input[name*="email" i]',
-  'input[name*="user" i]',
-  'input[id*="email" i]',
-  'input[id*="user" i]',
-  'input[placeholder*="email" i]',
-  'input[placeholder*="user" i]',
-  'input[type="text"]',
-];
 const PASS_SELECTORS = [
   'input[type="password"]',
   'input[autocomplete="current-password"]',
@@ -19,9 +8,7 @@ const PASS_SELECTORS = [
   'input[placeholder*="password" i]',
 ];
 
-// Matches SSO buttons ("Sign in with Google/Clever/…") so we never treat one as
-// the email/password submit.
-const SSO = /with|google|clever|apple|microsoft|facebook|okta|saml|sso/i;
+const SSO_SRC = "with|google|clever|apple|microsoft|facebook|okta|saml|sso";
 
 async function firstVisible(page: Page, selectors: string[]): Promise<Locator | null> {
   for (const sel of selectors) {
@@ -35,64 +22,90 @@ async function firstVisible(page: Page, selectors: string[]): Promise<Locator | 
   return null;
 }
 
-// Deterministic login before the hunt: fill the username + password fields and
-// submit the email/password form (not an SSO button). Credentials never touch
-// the LLM — this is plain browser automation.
+// Deterministic login before the hunt. Waits for the (often heavy) React login
+// form to hydrate, submits email/password, and retries — a click landed before
+// hydration does a native form reload instead of a real sign-in. Success is
+// detected when the password field disappears (we navigated into the app).
+// Credentials never touch the LLM.
 export async function attemptLogin(
   page: Page,
   auth: HuntAuth,
 ): Promise<{ ok: boolean; reason?: string }> {
-  let passField = await firstVisible(page, PASS_SELECTORS);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.waitForLoadState("networkidle", { timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(attempt === 0 ? 1500 : 1200);
 
-  // Some pages hide the email/password form behind a toggle (SSO-first). Reveal it.
-  if (!passField) {
-    const reveal = page
-      .getByRole("button", {
-        name: /e-?mail|use email|sign ?in with email|continue with email|use password|log ?in with email/i,
-      })
-      .filter({ hasNotText: SSO })
-      .first();
-    if (await reveal.isVisible({ timeout: 800 }).catch(() => false)) {
-      await reveal.click({ timeout: 3000 }).catch(() => {});
-      await page.waitForTimeout(600);
-      passField = await firstVisible(page, PASS_SELECTORS);
+    // Reveal a hidden email/password form (SSO-first pages) if needed.
+    let passField = await firstVisible(page, PASS_SELECTORS);
+    if (!passField) {
+      const reveal = page
+        .getByRole("button", {
+          name: /e-?mail|use email|sign ?in with email|continue with email|use password|log ?in with email/i,
+        })
+        .filter({ hasNotText: new RegExp(SSO_SRC, "i") })
+        .first();
+      if (await reveal.isVisible({ timeout: 800 }).catch(() => false)) {
+        await reveal.click({ timeout: 3000 }).catch(() => {});
+        await page.waitForTimeout(600);
+        passField = await firstVisible(page, PASS_SELECTORS);
+      }
     }
-  }
-
-  const userField = await firstVisible(page, USER_SELECTORS);
-  if (!userField || !passField) {
-    return { ok: false, reason: "couldn't find the email/password fields on that page" };
-  }
-
-  // Type key-by-key (not fill) so controlled React/Vue inputs update their state.
-  try {
-    await userField.click({ timeout: 3000 }).catch(() => {});
-    await userField.fill("");
-    await userField.pressSequentially(auth.username, { delay: 15 });
-    await passField.click({ timeout: 3000 }).catch(() => {});
-    await passField.fill("");
-    await passField.pressSequentially(auth.password, { delay: 15 });
-  } catch {
-    return { ok: false, reason: "couldn't type into the login fields" };
-  }
-
-  // Submit via the plain submit button — an exact-ish "Sign in"/"Log in" that is
-  // NOT an SSO button — else press Enter inside the password field.
-  const submit = page
-    .getByRole("button", { name: /^\s*(sign ?in|log ?in|continue|submit|next)\s*$/i })
-    .filter({ hasNotText: SSO })
-    .first();
-  try {
-    if (await submit.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await submit.click({ timeout: 5000 });
-    } else {
-      await passField.press("Enter");
+    if (!passField) {
+      return { ok: false, reason: "couldn't find the email/password fields on that page" };
     }
-  } catch {
-    await passField.press("Enter").catch(() => {});
+
+    const outcome = await page.evaluate(
+      ({ u, p, ssoSrc }) => {
+        const sso = new RegExp(ssoSrc, "i");
+        const submitRe = /^\s*(sign ?in|log ?in|continue|submit|next)\s*$/i;
+        const setValue = (el: Element, v: string) => {
+          const input = el as HTMLInputElement;
+          const setter = Object.getOwnPropertyDescriptor(
+            Object.getPrototypeOf(input),
+            "value",
+          )?.set;
+          setter?.call(input, v);
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        };
+        const email =
+          document.querySelector<HTMLInputElement>(
+            'input[type="email"], input[autocomplete="username"], input[name*="email" i], input[name*="user" i], input[id*="email" i], input[placeholder*="email" i]',
+          ) || document.querySelector<HTMLInputElement>('input[type="text"]');
+        const pass = document.querySelector<HTMLInputElement>('input[type="password"]');
+        if (!email || !pass) return "nofields";
+        setValue(email, u);
+        setValue(pass, p);
+        const btn = [
+          ...document.querySelectorAll<HTMLElement>('button, input[type="submit"]'),
+        ].find((b) => {
+          const t = (b.textContent || (b as HTMLInputElement).value || "").trim();
+          return submitRe.test(t) && !sso.test(t);
+        });
+        if (btn) {
+          btn.click();
+          return "clicked";
+        }
+        if (pass.form) {
+          pass.form.requestSubmit();
+          return "submitted";
+        }
+        return "nobutton";
+      },
+      { u: auth.username, p: auth.password, ssoSrc: SSO_SRC },
+    );
+
+    if (outcome === "nofields" || outcome === "nobutton") {
+      // give hydration another attempt
+      continue;
+    }
+
+    // Wait for the auth round-trip / navigation, then check for success.
+    await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
+    await page.waitForTimeout(1000);
+    const stillHasPassword = await firstVisible(page, PASS_SELECTORS);
+    if (!stillHasPassword) return { ok: true };
   }
 
-  // Give the auth round-trip time to complete and cookies to land.
-  await page.waitForLoadState("networkidle", { timeout: 12000 }).catch(() => {});
-  return { ok: true };
+  return { ok: false, reason: "login didn't take after retries" };
 }
