@@ -91,7 +91,13 @@ export function defaultProviders(): Provider[] {
     );
   if (env.groqKey)
     chain.push(
-      openaiCompat("groq", "https://api.groq.com/openai/v1", "qwen/qwen3.6-27b", env.groqKey),
+      openaiCompat(
+        "groq",
+        "https://api.groq.com/openai/v1",
+        // qwen3.6-27b 503s on image input; scout handles vision reliably.
+        "meta-llama/llama-4-scout-17b-16e-instruct",
+        env.groqKey,
+      ),
     );
   return chain;
 }
