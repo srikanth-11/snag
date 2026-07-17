@@ -31,6 +31,14 @@ export interface Verdict {
   reason: string;
 }
 
+// Optional login credentials for hunting behind an auth wall. Used in-memory
+// only — never stored in the database, never sent to the LLM.
+export interface HuntAuth {
+  loginUrl?: string;
+  username: string;
+  password: string;
+}
+
 export type JobStatus = "queued" | "running" | "done" | "error";
 
 export interface Job {

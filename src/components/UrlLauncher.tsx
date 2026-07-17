@@ -15,15 +15,27 @@ export default function UrlLauncher() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function run(target: string) {
+  const [showAuth, setShowAuth] = useState(false);
+  const [loginUrl, setLoginUrl] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  async function run(target: string, withAuth = false) {
     if (!target || busy) return;
     setBusy(true);
     setError(null);
     try {
+      const payload: {
+        url: string;
+        auth?: { loginUrl?: string; username: string; password: string };
+      } = { url: target };
+      if (withAuth && username && password) {
+        payload.auth = { loginUrl: loginUrl.trim() || undefined, username, password };
+      }
       const res = await fetch("/api/hunt", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url: target }),
+        body: JSON.stringify(payload),
       });
       if (res.status === 401) {
         router.push("/signup?next=/");
@@ -42,12 +54,15 @@ export default function UrlLauncher() {
     }
   }
 
+  const field =
+    "min-w-0 flex-1 rounded-lg border border-edge bg-ash px-4 py-2.5 font-mono text-sm text-bone placeholder:text-smoke/70 focus:border-proof/60";
+
   return (
     <div id="try" className="mx-auto mt-10 w-full max-w-xl">
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          run(url.trim());
+          run(url.trim(), showAuth);
         }}
         className="flex gap-2"
       >
@@ -67,6 +82,45 @@ export default function UrlLauncher() {
           {busy ? "Releasing…" : "Run Snag"}
         </button>
       </form>
+
+      <button
+        type="button"
+        onClick={() => setShowAuth((s) => !s)}
+        className="mt-3 text-sm text-smoke transition-colors hover:text-bone"
+      >
+        {showAuth ? "− Hide login" : "+ Behind a login?"}
+      </button>
+
+      {showAuth && (
+        <div className="mt-2 flex flex-col gap-2 rounded-xl border border-edge bg-ash/40 p-4">
+          <input
+            inputMode="url"
+            placeholder="Login page URL (optional — defaults to the target)"
+            value={loginUrl}
+            onChange={(e) => setLoginUrl(e.target.value)}
+            className={field}
+          />
+          <input
+            autoComplete="off"
+            placeholder="Email or username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className={field}
+          />
+          <input
+            type="password"
+            autoComplete="off"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={field}
+          />
+          <p className="text-xs text-smoke">
+            Used once for this hunt. Never saved, never sent to the AI — only the browser
+            logs in.
+          </p>
+        </div>
+      )}
 
       {error && <p className="mt-2 text-sm text-ember">{error}</p>}
 

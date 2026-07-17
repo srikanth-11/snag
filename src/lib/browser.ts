@@ -1,7 +1,9 @@
 import { chromium, type Browser, type Page } from "playwright";
 import type { Driver } from "@/lib/agent/loop";
+import type { HuntAuth } from "@/lib/types";
 import { attachObservers } from "@/lib/agent/observers";
 import { execute } from "@/lib/agent/actions";
+import { attemptLogin } from "@/lib/agent/login";
 
 let browser: Browser | null = null;
 
@@ -27,13 +29,31 @@ export async function closeBrowser(): Promise<void> {
 }
 
 export async function screenshotB64(page: Page): Promise<string> {
-  const buf = await page.screenshot({ type: "jpeg", quality: 55 });
-  return buf.toString("base64");
+  // Resilient to in-flight navigations (e.g. a redirect right after login):
+  // wait for the DOM, retry once, and fall back to text-only rather than crash.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await page.waitForLoadState("domcontentloaded", { timeout: 5000 }).catch(() => {});
+      const buf = await page.screenshot({ type: "jpeg", quality: 55 });
+      return buf.toString("base64");
+    } catch {
+      await page.waitForTimeout(600).catch(() => {});
+    }
+  }
+  return "";
 }
 
 // A compact list of interactive elements for the prompt (Playwright dropped the
 // accessibility snapshot API, so we read the DOM directly).
 export async function axDigest(page: Page): Promise<string> {
+  try {
+    return await axDigestInner(page);
+  } catch {
+    return "";
+  }
+}
+
+async function axDigestInner(page: Page): Promise<string> {
   const items = await page.evaluate(() => {
     const out: string[] = [];
     const els = document.querySelectorAll(
@@ -57,10 +77,26 @@ export async function axDigest(page: Page): Promise<string> {
 }
 
 // Real Playwright-backed implementation of the loop's Driver interface.
-export async function createPlaywrightDriver(url: string): Promise<Driver> {
+// When `auth` is given, logs in first (deterministically) so the hunt runs
+// against the app behind the login wall.
+export async function createPlaywrightDriver(url: string, auth?: HuntAuth): Promise<Driver> {
   const b = await getBrowser();
   const context = await b.newContext({ viewport: { width: 1100, height: 800 } });
   const page = await context.newPage();
+
+  // Log in before observers attach, so the login page's own noise isn't
+  // reported as findings.
+  if (auth?.username && auth.password) {
+    await page
+      .goto(auth.loginUrl || url, { waitUntil: "domcontentloaded", timeout: 20000 })
+      .catch(() => {});
+    // Let a client-rendered (SPA) login form hydrate before we interact, or the
+    // click hits a dead form and no sign-in happens.
+    await page.waitForLoadState("networkidle", { timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(800).catch(() => {});
+    await attemptLogin(page, auth);
+  }
+
   const obs = attachObservers(page);
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 }).catch(() => {});
 

@@ -64,7 +64,7 @@ ${digest || "(none detected — use the screenshot)"}
 
 How you test: ${persona.tactics}
 
-Look at the screenshot and the elements, then choose ONE next action that best exercises the page and is most likely to reveal a bug. Prefer realistic user actions and edge-case inputs. Avoid repeating actions that led nowhere. Use "stop" only once you have thoroughly exercised this page.
+Look at the screenshot and the elements, then choose ONE next action that best exercises the page and is most likely to reveal a bug. Prefer realistic user actions and edge-case inputs. Avoid repeating actions that led nowhere. Do not log out or click sign-out links — stay logged in so you can keep testing. Use "stop" only once you have thoroughly exercised this page.
 
 Respond with ONLY a JSON object in exactly this shape, no prose:
 ${ACTION_SHAPE}`;

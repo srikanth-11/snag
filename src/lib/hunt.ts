@@ -1,4 +1,4 @@
-import type { Action, StreamEvent } from "@/lib/types";
+import type { Action, HuntAuth, StreamEvent } from "@/lib/types";
 import type { PersonaKey } from "@/lib/agent/persona";
 import { runHunt } from "@/lib/agent/loop";
 import { createPlaywrightDriver, closeBrowser } from "@/lib/browser";
@@ -15,8 +15,9 @@ export async function startHunt(input: {
   jobId: string;
   url: string;
   persona: PersonaKey;
+  auth?: HuntAuth;
 }): Promise<void> {
-  const { jobId, url, persona } = input;
+  const { jobId, url, persona, auth } = input;
 
   const emit = async (event: StreamEvent) => {
     try {
@@ -41,7 +42,7 @@ export async function startHunt(input: {
   };
 
   try {
-    const driver = await createPlaywrightDriver(url);
+    const driver = await createPlaywrightDriver(url, auth);
     await runHunt({
       url,
       persona,
