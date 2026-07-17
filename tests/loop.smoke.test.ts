@@ -55,7 +55,7 @@ describe("runHunt", () => {
     expect(events.at(-1)).toMatchObject({ type: "status", status: "done" });
   });
 
-  it("stops early after three idle steps with no findings", async () => {
+  it("stops after the idle cutoff when nothing new is found", async () => {
     const think: ThinkFn = async () => ({ kind: "scroll", reason: "look around" });
     const idleDriver: Driver = {
       currentUrl: () => "https://demo.test/",
@@ -75,7 +75,7 @@ describe("runHunt", () => {
       },
       maxSteps: 25,
     });
-    // 3 idle steps → loop breaks well before maxSteps
-    expect(steps.length).toBeLessThanOrEqual(4);
+    // idle cutoff (10) breaks the loop well before maxSteps (25)
+    expect(steps.length).toBeLessThanOrEqual(11);
   });
 });

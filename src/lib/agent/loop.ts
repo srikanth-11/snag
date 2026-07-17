@@ -11,6 +11,8 @@ export interface Driver {
   digest(): Promise<string>;
   act(action: Action): Promise<void>;
   drain(): Evidence[];
+  /** Optional accessibility scan (axe-core) of the current page. */
+  scanA11y?(): Promise<Finding[]>;
   dispose(): Promise<void>;
 }
 
@@ -49,6 +51,7 @@ function titleFor(ev: Evidence): string {
 function hardFinding(ev: Evidence, actions: Action[], shotPath?: string): Finding {
   return {
     kind: "hard",
+    category: ev.type === "http" ? "network" : "error",
     severity: classifySeverity(ev),
     title: titleFor(ev),
     detail: ev.text,
@@ -73,14 +76,42 @@ export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
   const seenEvidence = new Set<string>();
   let idle = 0;
   let thinkFails = 0;
+  const a11yScanned = new Set<string>();
+  // Per-page record of actions already tried, so the agent stops repeating them.
+  const triedByPage = new Map<string, Set<string>>();
+  const normUrl = (u: string) => {
+    try {
+      const x = new URL(u);
+      return x.origin + x.pathname;
+    } catch {
+      return u;
+    }
+  };
+  const actionSig = (a: Action) => `${a.kind} ${a.target ?? a.value ?? ""}`.trim();
+
+  // Run the accessibility scan once per unique page (no repeats).
+  const scanA11y = async () => {
+    const current = driver.currentUrl();
+    if (a11yScanned.has(current) || !driver.scanA11y) return;
+    a11yScanned.add(current);
+    for (const f of await driver.scanA11y()) {
+      const key = `a11y:${f.title}:${f.selector ?? ""}`;
+      if (seenEvidence.has(key)) continue;
+      seenEvidence.add(key);
+      findings.push(f);
+      await emit({ type: "finding", finding: f });
+    }
+  };
 
   await emit({ type: "status", status: "running", note: url });
+  await scanA11y();
 
   for (let n = 1; n <= maxSteps; n++) {
     const imageB64 = await driver.screenshot();
     const shotPath = await saveShot(n, imageB64);
     const digest = await driver.digest();
-    const prompt = buildPrompt(p, driver.currentUrl(), visited, actions, digest);
+    const triedHere = [...(triedByPage.get(normUrl(driver.currentUrl())) ?? [])];
+    const prompt = buildPrompt(p, driver.currentUrl(), visited, actions, digest, triedHere);
 
     let action: Action;
     try {
@@ -112,9 +143,15 @@ export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
       // broken selector / nav — the observers will report any resulting error
     }
     actions.push(action);
+    // Record this action against the page it was taken on.
+    const pageKey = normUrl(driver.currentUrl());
+    if (!triedByPage.has(pageKey)) triedByPage.set(pageKey, new Set());
+    triedByPage.get(pageKey)!.add(actionSig(action));
 
     const beforeUrls = visited.size;
     visited.add(driver.currentUrl());
+    // New page reached → scan it for accessibility issues.
+    if (visited.size > beforeUrls) await scanA11y();
 
     let fresh = 0;
     for (const ev of driver.drain()) {

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Action, Finding, Job, JobStatus } from "@/lib/types";
+import type { Action, Finding, FindingCategory, Job, JobStatus } from "@/lib/types";
 import { adminClient } from "@/lib/supabase/admin";
 
 export interface StepRecord {
@@ -56,7 +56,7 @@ export async function addStep(input: {
 }
 
 export async function addFinding(jobId: string, f: Finding): Promise<void> {
-  await adminClient().from("findings").insert({
+  const base = {
     job_id: jobId,
     kind: f.kind,
     severity: f.severity,
@@ -66,7 +66,17 @@ export async function addFinding(jobId: string, f: Finding): Promise<void> {
     repro: f.repro,
     screenshot_path: f.screenshotPath ?? null,
     verified: f.verified,
-  });
+  };
+  const full = {
+    ...base,
+    category: f.category,
+    docs_url: f.docsUrl ?? null,
+    selector: f.selector ?? null,
+  };
+  // Insert with the richer columns; fall back to the base shape if the migration
+  // (0002) that adds category/docs_url/selector hasn't been run yet.
+  const { error } = await adminClient().from("findings").insert(full);
+  if (error) await adminClient().from("findings").insert(base);
 }
 
 // ---- Reads (caller's RLS-scoped client) ----
@@ -116,11 +126,14 @@ export async function listUserJobs(
 
 interface FindingRow {
   kind: "hard" | "soft";
+  category: FindingCategory | null;
   severity: Finding["severity"];
   title: string;
   detail: string | null;
   evidence: string[] | null;
   repro: string[] | null;
+  selector: string | null;
+  docs_url: string | null;
   screenshot_path: string | null;
   verified: boolean;
 }
@@ -135,11 +148,14 @@ export async function getFindings(client: SupabaseClient, jobId: string): Promis
     const r = row as FindingRow;
     return {
       kind: r.kind,
+      category: r.category ?? (r.kind === "soft" ? "ux" : "error"),
       severity: r.severity,
       title: r.title,
       detail: r.detail ?? "",
       evidence: r.evidence ?? [],
       repro: r.repro ?? [],
+      selector: r.selector ?? undefined,
+      docsUrl: r.docs_url ?? undefined,
       screenshotPath: r.screenshot_path ?? undefined,
       verified: r.verified,
     };

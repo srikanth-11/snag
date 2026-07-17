@@ -6,6 +6,25 @@ import { SEVERITY_ORDER } from "@/components/SeverityBadge";
 import { createClient } from "@/lib/supabase/server";
 import { getJob, getFindings } from "@/lib/db";
 import { dedupe } from "@/lib/agent/dedupe";
+import type { Finding, FindingCategory } from "@/lib/types";
+
+// The user's focus (a11y, contrast, visual) leads; functional issues follow.
+const CATEGORY_ORDER: FindingCategory[] = [
+  "accessibility",
+  "visual",
+  "error",
+  "network",
+  "ux",
+  "performance",
+];
+const CATEGORY_TITLE: Record<FindingCategory, string> = {
+  accessibility: "Accessibility",
+  visual: "Visual & layout",
+  error: "Errors & crashes",
+  network: "Network",
+  ux: "UX & flows",
+  performance: "Performance",
+};
 
 export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -13,9 +32,13 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const job = await getJob(supabase, id);
   if (!job) notFound();
 
-  const findings = dedupe(await getFindings(supabase, id)).sort(
-    (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity],
-  );
+  const findings = dedupe(await getFindings(supabase, id));
+  const groups = CATEGORY_ORDER.map((cat) => ({
+    cat,
+    items: findings
+      .filter((f) => f.category === cat)
+      .sort((a: Finding, b: Finding) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]),
+  })).filter((g) => g.items.length);
 
   return (
     <>
@@ -42,11 +65,37 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             Snag found nothing to catch. Either your app is solid or the target needs to be harder.
           </div>
         ) : (
-          <div className="mt-8 space-y-4">
-            {findings.map((f, i) => (
-              <FindingCard key={i} f={f} />
-            ))}
-          </div>
+          <>
+            {/* Category summary */}
+            <div className="mt-6 flex flex-wrap gap-2">
+              {groups.map((g) => (
+                <span
+                  key={g.cat}
+                  className="rounded-full border border-edge bg-ash/40 px-3 py-1 font-mono text-xs text-bone"
+                >
+                  {CATEGORY_TITLE[g.cat]} · {g.items.length}
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-8 space-y-10">
+              {groups.map((g) => (
+                <section key={g.cat}>
+                  <h2 className="mb-3 font-display text-xl font-bold">
+                    {CATEGORY_TITLE[g.cat]}{" "}
+                    <span className="font-mono text-sm font-normal text-smoke">
+                      {g.items.length}
+                    </span>
+                  </h2>
+                  <div className="space-y-4">
+                    {g.items.map((f, i) => (
+                      <FindingCard key={i} f={f} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </>
         )}
       </main>
     </>

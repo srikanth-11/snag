@@ -1,27 +1,39 @@
 "use client";
 
 import { toast } from "sonner";
-import type { Finding } from "@/lib/types";
+import type { Finding, FindingCategory } from "@/lib/types";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { SnaggedStamp } from "@/components/SnaggedStamp";
+
+const CATEGORY_LABEL: Record<FindingCategory, string> = {
+  accessibility: "accessibility",
+  error: "error",
+  network: "network",
+  visual: "visual",
+  ux: "ux",
+  performance: "performance",
+};
+
+function CategoryBadge({ category }: { category: FindingCategory }) {
+  return (
+    <span className="rounded border border-edge bg-bone/5 px-2 py-0.5 font-mono text-[11px] lowercase text-smoke">
+      {CATEGORY_LABEL[category]}
+    </span>
+  );
+}
 
 function toIssueMarkdown(f: Finding): string {
   const parts = [
     `## ${f.title}`,
     ``,
-    `**Severity:** ${f.severity}`,
-    ``,
-    `**What happens:** ${f.detail || "—"}`,
+    `**Category:** ${f.category}  ·  **Severity:** ${f.severity}`,
   ];
-  if (f.repro.length) {
-    parts.push(``, `**Steps to reproduce:**`, ...f.repro);
-  }
-  if (f.evidence.length) {
-    parts.push(``, `**Evidence:**`, "```", ...f.evidence, "```");
-  }
-  if (f.screenshotPath) {
-    parts.push(``, `![screenshot](${f.screenshotPath})`);
-  }
+  parts.push(``, `**What happens:** ${f.detail || "—"}`);
+  if (f.selector) parts.push(``, `**Element:** \`${f.selector}\``);
+  if (f.repro.length) parts.push(``, `**Steps to reproduce:**`, ...f.repro);
+  if (f.evidence.length) parts.push(``, `**Evidence:**`, "```", ...f.evidence, "```");
+  if (f.docsUrl) parts.push(``, `**How to fix:** ${f.docsUrl}`);
+  if (f.screenshotPath) parts.push(``, `![screenshot](${f.screenshotPath})`);
   parts.push(``, `_Found by Snag._`);
   return parts.join("\n");
 }
@@ -38,14 +50,18 @@ export function FindingCard({ f }: { f: Finding }) {
 
   return (
     <div className="rounded-xl border border-edge bg-ash/40 p-5">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <SeverityBadge severity={f.severity} />
+        <CategoryBadge category={f.category} />
         {f.verified && <SnaggedStamp />}
-        <span className="ml-auto font-mono text-xs text-smoke">{f.kind}</span>
       </div>
 
       <h3 className="mt-3 font-display text-lg font-semibold">{f.title}</h3>
       {f.detail && <p className="mt-1 text-sm leading-relaxed text-smoke">{f.detail}</p>}
+
+      {f.selector && (
+        <p className="mt-2 break-all font-mono text-xs text-proof">{f.selector}</p>
+      )}
 
       {f.repro.length > 0 && (
         <ol className="mt-3 space-y-1 font-mono text-xs text-bone">
@@ -70,12 +86,24 @@ export function FindingCard({ f }: { f: Finding }) {
         />
       )}
 
-      <button
-        onClick={copy}
-        className="mt-4 rounded-lg border border-edge px-3 py-1.5 text-sm text-bone transition-colors hover:border-proof/50"
-      >
-        Copy as GitHub issue
-      </button>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <button
+          onClick={copy}
+          className="rounded-lg border border-edge px-3 py-1.5 text-sm text-bone transition-colors hover:border-proof/50"
+        >
+          Copy as GitHub issue
+        </button>
+        {f.docsUrl && (
+          <a
+            href={f.docsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-proof hover:underline"
+          >
+            How to fix ↗
+          </a>
+        )}
+      </div>
     </div>
   );
 }

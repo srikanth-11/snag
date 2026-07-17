@@ -43,6 +43,7 @@ describe("detectSoft", () => {
 describe("screenFindings (skeptic)", () => {
   const soft: Finding = {
     kind: "soft",
+    category: "ux",
     severity: "medium",
     title: "Maybe broken",
     detail: "",

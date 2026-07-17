@@ -14,13 +14,27 @@ export interface Action {
 
 export type Severity = "critical" | "high" | "medium" | "low";
 
+// What kind of problem a finding is — lets the report group and prioritize.
+export type FindingCategory =
+  | "accessibility"
+  | "error"
+  | "network"
+  | "visual"
+  | "ux"
+  | "performance";
+
 export interface Finding {
   kind: "hard" | "soft";
+  category: FindingCategory;
   severity: Severity;
   title: string;
   detail: string;
   evidence: string[];
   repro: string[];
+  /** CSS selector / element the issue is on (a11y + visual findings). */
+  selector?: string;
+  /** Link to guidance (e.g. the axe/WCAG rule help page). */
+  docsUrl?: string;
   screenshotPath?: string;
   verified: boolean;
 }

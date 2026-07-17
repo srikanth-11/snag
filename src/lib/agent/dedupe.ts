@@ -12,7 +12,7 @@ function norm(s: string): string {
 }
 
 function key(f: Finding): string {
-  return `${f.kind}|${norm(f.title)}|${norm(f.evidence[0] ?? "")}`;
+  return `${f.category}|${norm(f.title)}|${norm(f.selector ?? f.evidence[0] ?? "")}`;
 }
 
 // Merge findings describing the same root problem; keep the highest severity

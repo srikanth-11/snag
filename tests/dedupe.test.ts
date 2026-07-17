@@ -5,6 +5,7 @@ import type { Finding } from "@/lib/types";
 function f(over: Partial<Finding>): Finding {
   return {
     kind: "hard",
+    category: "error",
     severity: "medium",
     title: "Server error",
     detail: "",

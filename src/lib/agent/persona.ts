@@ -45,6 +45,7 @@ export function buildPrompt(
   visited: Set<string>,
   actions: Action[],
   digest: string,
+  tried: string[] = [],
 ): string {
   const recent =
     actions
@@ -61,6 +62,9 @@ Recent actions: ${recent}
 
 Interactive elements visible on the page:
 ${digest || "(none detected — use the screenshot)"}
+
+Actions you already tried on THIS page (do NOT repeat these — move on to something new or a different page):
+${tried.length ? tried.slice(-20).join(" | ") : "none yet"}
 
 How you test: ${persona.tactics}
 

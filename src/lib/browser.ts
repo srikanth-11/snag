@@ -4,6 +4,8 @@ import type { HuntAuth } from "@/lib/types";
 import { attachObservers } from "@/lib/agent/observers";
 import { execute } from "@/lib/agent/actions";
 import { attemptLogin } from "@/lib/agent/login";
+import { runAxe } from "@/lib/agent/a11y";
+import { runAudit } from "@/lib/agent/audit";
 
 let browser: Browser | null = null;
 
@@ -121,6 +123,7 @@ export async function createPlaywrightDriver(url: string, auth?: HuntAuth): Prom
     digest: () => axDigest(page),
     act: (action) => execute(page, action),
     drain: () => obs.drain(),
+    scanA11y: async () => [...(await runAxe(page)), ...(await runAudit(page))],
     dispose: async () => {
       obs.dispose();
       await context.close().catch(() => {});

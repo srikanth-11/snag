@@ -39,6 +39,7 @@ ${SOFT_FINDINGS_SHAPE}`;
   const list = Array.isArray(raw?.findings) ? raw.findings : [];
   return list.slice(0, 5).map((f) => ({
     kind: "soft" as const,
+    category: "ux" as const,
     severity: normalizeSeverity(f.severity),
     title: (f.title ?? "Possible issue").slice(0, 120),
     detail: (f.detail ?? "").slice(0, 400),
