@@ -61,7 +61,7 @@ async function axDigestInner(page: Page): Promise<string> {
       'a, button, input, textarea, select, [role="button"], [role="link"], [role="textbox"]',
     );
     els.forEach((el) => {
-      if (out.length > 60) return;
+      if (out.length > 90) return;
       const tag = el.getAttribute("role") ?? el.tagName.toLowerCase();
       const label =
         (el as HTMLElement).innerText?.trim() ||
@@ -74,7 +74,7 @@ async function axDigestInner(page: Page): Promise<string> {
     });
     return out;
   });
-  return items.slice(0, 60).join("\n");
+  return items.slice(0, 90).join("\n");
 }
 
 // Real Playwright-backed implementation of the loop's Driver interface.

@@ -51,12 +51,12 @@ export function buildPrompt(
       .slice(-12)
       .map((a) => `${a.kind} ${a.target ?? a.value ?? ""}`.trim())
       .join(" | ") || "none yet";
-  const seen = [...visited].slice(-8).join(", ") || "none yet";
+  const seen = [...visited].slice(-20).join(", ") || "none yet";
 
-  return `You are ${persona.title} doing authorized quality-assurance testing of this web application. You have permission to test it. Your goal is to find real bugs — JavaScript errors, server errors, broken links, crashes, or forms that mishandle input — so they can be fixed before real users hit them. This is ordinary functional testing of the app's own behaviour, not security testing.
+  return `You are ${persona.title} doing authorized quality-assurance testing of this web application. You have permission to test it. Your job is to achieve FULL COVERAGE of the entire app and find real bugs — JavaScript errors, server errors, broken links, crashes, or forms that mishandle input — before real users hit them. This is ordinary functional testing of the app's own behaviour, not security testing.
 
 Current URL: ${url}
-Pages already tested: ${seen}
+Pages already visited: ${seen}
 Recent actions: ${recent}
 
 Interactive elements visible on the page:
@@ -64,7 +64,14 @@ ${digest || "(none detected — use the screenshot)"}
 
 How you test: ${persona.tactics}
 
-Look at the screenshot and the elements, then choose ONE next action that best exercises the page and is most likely to reveal a bug. Prefer realistic user actions and edge-case inputs. Avoid repeating actions that led nowhere. Do not log out or click sign-out links — stay logged in so you can keep testing. Do not click third-party sign-in buttons (Google, Clever, Apple, etc.) or otherwise navigate off this site. Use "stop" only once you have thoroughly exercised this page.
+Work through the WHOLE app, not just this page. Systematically:
+- open the navigation menu, the profile, settings, and every section, tab, and link you have NOT visited yet;
+- open documents, resources, and detail views;
+- fill in and submit every form, both with valid data and with invalid/edge-case data, to check validation and error handling.
+
+Choose ONE next action. Prefer, in order: (1) navigating to a page, menu item, or link you have not visited yet; (2) exercising a form or control you have not tried; (3) an edge-case input likely to reveal a bug. Avoid repeating actions that led nowhere. Do NOT log out or click sign-out links — stay logged in so you can keep testing. Do NOT click third-party sign-in buttons (Google, Clever, Apple, etc.) or navigate off this site.
+
+Use "stop" ONLY when you have genuinely visited every reachable page and exercised every form — otherwise keep exploring.
 
 Respond with ONLY a JSON object in exactly this shape, no prose:
 ${ACTION_SHAPE}`;

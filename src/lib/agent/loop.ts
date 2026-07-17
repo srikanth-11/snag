@@ -62,7 +62,8 @@ function hardFinding(ev: Evidence, actions: Action[], shotPath?: string): Findin
 
 export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
   const { url, driver, emit, think, persona } = opts;
-  const maxSteps = opts.maxSteps ?? 25;
+  // Generous budget for full-coverage exploration; tunable via env.
+  const maxSteps = opts.maxSteps ?? (Number(process.env.SNAG_MAX_STEPS) || 45);
   const saveShot = opts.saveShot ?? (async () => "");
   const p = pickPersona(persona);
 
@@ -71,6 +72,7 @@ export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
   const findings: Finding[] = [];
   const seenEvidence = new Set<string>();
   let idle = 0;
+  let thinkFails = 0;
 
   await emit({ type: "status", status: "running", note: url });
 
@@ -83,8 +85,14 @@ export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
     let action: Action;
     try {
       action = await think({ prompt, imageB64 });
+      thinkFails = 0;
     } catch {
-      break; // every LLM provider failed — end the hunt cleanly
+      // Tolerate transient LLM failures (e.g. free-tier per-minute rate limits)
+      // so throttling doesn't cut a long full-coverage hunt short.
+      thinkFails++;
+      if (thinkFails >= 6) break;
+      await new Promise((r) => setTimeout(r, 5000));
+      continue;
     }
 
     await emit({
@@ -135,7 +143,9 @@ export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
 
     if (fresh === 0 && visited.size === beforeUrls) idle++;
     else idle = 0;
-    if (idle >= 3) break; // three steps with nothing new — stop wasting calls
+    // Stop only after a long stretch with no new page and no new finding — by
+    // then the agent has genuinely run out of places to go.
+    if (idle >= 10) break;
   }
 
   await driver.dispose();
