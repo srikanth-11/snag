@@ -12,7 +12,9 @@ export interface Driver {
   act(action: Action): Promise<void>;
   drain(): Evidence[];
   /** Optional accessibility scan (axe-core) of the current page. */
-  scanA11y?(): Promise<Finding[]>;
+  scanA11y?(uploadCrop?: (b64: string) => Promise<string>): Promise<Finding[]>;
+  /** Optional one-time performance scan (LCP/CLS/TTFB). */
+  scanPerf?(): Promise<Finding[]>;
   dispose(): Promise<void>;
 }
 
@@ -26,6 +28,8 @@ export interface HuntOptions {
   think: ThinkFn;
   maxSteps?: number;
   saveShot?: (step: number, imageB64: string) => Promise<string>;
+  /** Uploads a cropped element screenshot, returns its URL. */
+  uploadCrop?: (b64: string) => Promise<string>;
   /**
    * Optional soft-failure pass, run every 5 steps. Should return findings that
    * are already skeptic-screened (the orchestrator wires detect + skeptic here).
@@ -94,7 +98,7 @@ export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
     const current = driver.currentUrl();
     if (a11yScanned.has(current) || !driver.scanA11y) return;
     a11yScanned.add(current);
-    for (const f of await driver.scanA11y()) {
+    for (const f of await driver.scanA11y(opts.uploadCrop)) {
       const key = `a11y:${f.title}:${f.selector ?? ""}`;
       if (seenEvidence.has(key)) continue;
       seenEvidence.add(key);
@@ -105,6 +109,14 @@ export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
 
   await emit({ type: "status", status: "running", note: url });
   await scanA11y();
+
+  // One-time performance pass on the landing page.
+  if (driver.scanPerf) {
+    for (const f of await driver.scanPerf()) {
+      findings.push(f);
+      await emit({ type: "finding", finding: f });
+    }
+  }
 
   for (let n = 1; n <= maxSteps; n++) {
     const imageB64 = await driver.screenshot();

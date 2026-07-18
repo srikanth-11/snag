@@ -6,6 +6,7 @@ import { execute } from "@/lib/agent/actions";
 import { attemptLogin } from "@/lib/agent/login";
 import { runAxe } from "@/lib/agent/a11y";
 import { runAudit } from "@/lib/agent/audit";
+import { runPerf } from "@/lib/agent/perf";
 
 let browser: Browser | null = null;
 
@@ -123,7 +124,11 @@ export async function createPlaywrightDriver(url: string, auth?: HuntAuth): Prom
     digest: () => axDigest(page),
     act: (action) => execute(page, action),
     drain: () => obs.drain(),
-    scanA11y: async () => [...(await runAxe(page)), ...(await runAudit(page))],
+    scanA11y: async (uploadCrop) => [
+      ...(await runAxe(page, uploadCrop)),
+      ...(await runAudit(page)),
+    ],
+    scanPerf: () => runPerf(page),
     dispose: async () => {
       obs.dispose();
       await context.close().catch(() => {});

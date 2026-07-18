@@ -41,6 +41,7 @@ export async function startHunt(input: {
     publish(jobId, event);
   };
 
+  let cropSeq = 0;
   try {
     const driver = await createPlaywrightDriver(url, auth);
     await runHunt({
@@ -57,6 +58,7 @@ export async function startHunt(input: {
         }
       },
       saveShot: (n, b64) => uploadShot(jobId, n, b64),
+      uploadCrop: (b64) => uploadShot(jobId, `crop-${cropSeq++}`, b64),
       inspect: async (a) =>
         screenFindings(
           await detectSoft({ imageB64: a.imageB64, url: a.url, actions: a.actions }),
