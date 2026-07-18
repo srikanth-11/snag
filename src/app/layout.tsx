@@ -19,7 +19,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 const DESC =
-  "Paste a URL and Snag sends an AI agent through your live app like a hostile QA engineer, catching the real bugs your users would hit and handing you a report you can ship.";
+  "Paste a URL and Snag sends an AI agent through your live app like a thorough QA engineer, catching the real bugs your users would hit and handing you a report you can ship.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),

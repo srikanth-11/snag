@@ -33,7 +33,8 @@ export async function setJobStatus(
   extra?: { error?: string },
 ): Promise<void> {
   const patch: Record<string, unknown> = { status };
-  if (status === "done" || status === "error") patch.finished_at = new Date().toISOString();
+  if (status === "done" || status === "error" || status === "stopped")
+    patch.finished_at = new Date().toISOString();
   if (extra?.error) patch.error = extra.error;
   await adminClient().from("jobs").update(patch).eq("id", id);
 }

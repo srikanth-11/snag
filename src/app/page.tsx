@@ -38,7 +38,7 @@ function Stage() {
         </div>
 
         <div className="absolute left-6 top-1/2 rounded-md bg-void/80 px-2 py-1 font-mono text-[11px] text-ember ring-1 ring-ember/40">
-          ⚑ attack
+          ⚑ probe
         </div>
         <div className="absolute bottom-16 right-6 rounded-md bg-void/80 px-2 py-1 font-mono text-[11px] text-proof ring-1 ring-proof/40">
           ● evidence
@@ -64,8 +64,8 @@ function Stage() {
 function HowItWorks() {
   const steps = [
     {
-      k: "Attacks",
-      d: "A persona-driven agent pokes, types garbage, and wanders your app in a real browser.",
+      k: "Explores",
+      d: "A persona-driven agent clicks, types edge-case input, and works through your app in a real browser.",
     },
     {
       k: "Verifies",
@@ -102,9 +102,9 @@ export default function Home() {
             Find the <span className="text-ember">snags</span> before your users do.
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-smoke">
-            Paste a URL. Snag attacks your live app like a hostile QA engineer,
-            catches the bugs your users would hit, and hands you a report you can
-            ship.
+            Paste a URL. Snag works through your live app like a thorough QA
+            engineer, catches the bugs your users would hit, and hands you a
+            report you can ship.
           </p>
 
           <div className="mt-12">

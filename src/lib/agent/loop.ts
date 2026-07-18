@@ -38,6 +38,8 @@ export interface HuntOptions {
   flows?: string[];
   /** Think fn for the flow runner (returns {action,status,reason}). */
   flowThink?: ThinkJson;
+  /** Cooperative cancel: checked between steps so a hunt can be stopped early. */
+  shouldStop?: () => boolean;
   /**
    * Optional soft-failure pass, run every 5 steps. Should return findings that
    * are already skeptic-screened (the orchestrator wires detect + skeptic here).
@@ -147,6 +149,7 @@ export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
   }
 
   for (let n = 1; n <= maxSteps; n++) {
+    if (opts.shouldStop?.()) break;
     const imageB64 = await driver.screenshot();
     const shotPath = await saveShot(n, imageB64);
     const digest = await driver.digest();
@@ -226,7 +229,7 @@ export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
   }
 
   // After exploration, drive each named flow to completion.
-  if (opts.flows?.length && opts.flowThink) {
+  if (opts.flows?.length && opts.flowThink && !opts.shouldStop?.()) {
     let flowIdx = 0;
     for (const goal of opts.flows.slice(0, 4)) {
       const f = await runFlow({
@@ -245,6 +248,6 @@ export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
   }
 
   await driver.dispose();
-  await emit({ type: "status", status: "done" });
+  await emit({ type: "status", status: opts.shouldStop?.() ? "stopped" : "done" });
   return findings;
 }

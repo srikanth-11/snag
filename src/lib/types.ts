@@ -37,6 +37,8 @@ export interface Finding {
   docsUrl?: string;
   /** One-line actionable fix suggestion. */
   suggestion?: string;
+  /** A concrete, model-generated root-cause fix (may include a code snippet). */
+  fix?: string;
   screenshotPath?: string;
   verified: boolean;
 }
@@ -55,7 +57,7 @@ export interface HuntAuth {
   password: string;
 }
 
-export type JobStatus = "queued" | "running" | "done" | "error";
+export type JobStatus = "queued" | "running" | "done" | "error" | "stopped";
 
 export interface Job {
   id: string;
@@ -63,6 +65,8 @@ export interface Job {
   status: JobStatus;
   persona?: string;
   error?: string;
+  /** Model-written summary of the run, generated when the hunt finishes. */
+  summary?: string;
   createdAt: string;
   finishedAt?: string;
 }
@@ -77,4 +81,4 @@ export type StreamEvent =
       shot: string;
     }
   | { type: "finding"; finding: Finding }
-  | { type: "status"; status: "running" | "done" | "error"; note?: string };
+  | { type: "status"; status: "running" | "done" | "error" | "stopped"; note?: string };

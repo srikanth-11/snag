@@ -8,7 +8,7 @@ export interface Persona {
   tactics: string;
 }
 
-// Framed as legitimate functional QA (not security/attack) so the model plays
+// Framed as legitimate functional QA (not security testing) so the model plays
 // along on real sites — the behaviours still surface real bugs.
 const PERSONAS: Record<PersonaKey, Persona> = {
   "edge-cases": {

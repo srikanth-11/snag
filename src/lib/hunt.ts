@@ -7,6 +7,7 @@ import { screenFindings } from "@/lib/agent/skeptic";
 import { discoverFlows } from "@/lib/agent/flow";
 import { think } from "@/lib/llm";
 import { publish } from "@/lib/bus";
+import { isCancelled, clearCancel } from "@/lib/control";
 import { addStep, addFinding, setJobStatus } from "@/lib/db";
 import { uploadShot } from "@/lib/storage";
 
@@ -34,7 +35,10 @@ export async function startHunt(input: {
         });
       } else if (event.type === "finding") {
         await addFinding(jobId, event.finding);
-      } else if (event.type === "status" && (event.status === "done" || event.status === "error")) {
+      } else if (
+        event.type === "status" &&
+        (event.status === "done" || event.status === "error" || event.status === "stopped")
+      ) {
         await setJobStatus(jobId, event.status);
       }
     } catch {
@@ -76,6 +80,7 @@ export async function startHunt(input: {
         ),
       flows,
       flowThink: (a) => think(a),
+      shouldStop: () => isCancelled(jobId),
     });
   } catch (err) {
     await setJobStatus(jobId, "error", {
@@ -83,6 +88,7 @@ export async function startHunt(input: {
     });
     publish(jobId, { type: "status", status: "error", note: "hunt failed" });
   } finally {
+    clearCancel(jobId);
     // Chromium leaks over long sessions — recycle it between hunts.
     await closeBrowser();
   }
