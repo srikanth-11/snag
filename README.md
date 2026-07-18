@@ -1,16 +1,15 @@
----
-title: Snag
-emoji: 🪝
-colorFrom: purple
-colorTo: red
-sdk: docker
-app_port: 7860
-pinned: false
----
+<p align="center">
+  <img src="public/snag-banner.png" alt="Snag — find the snags before your users do" width="560">
+</p>
 
-# 🪝 Snag
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-0b0b0b?logo=nextdotjs&logoColor=white" alt="Next.js 16">
+  <img src="https://img.shields.io/badge/Playwright-Chromium-2EAD33?logo=playwright&logoColor=white" alt="Playwright">
+  <img src="https://img.shields.io/badge/Supabase-Auth·DB·Storage-3ECF8E?logo=supabase&logoColor=white" alt="Supabase">
+  <img src="https://img.shields.io/badge/vision%20model-Gemini%20·%20NVIDIA%20·%20Groq-FF5C38" alt="Vision model fallback chain">
+</p>
 
-**Find the snags before your users do.**
+---
 
 Paste a URL. Snag sends an AI agent into your live web app, opens it in a real
 browser, and works through it the way a QA engineer would on a bad day: clicking,
