@@ -97,6 +97,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             grade={grade}
             pages={Math.max(1, pages)}
             summary={job.summary}
+            url={job.url}
           />
         )}
     </main>

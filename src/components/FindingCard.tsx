@@ -2,6 +2,7 @@
 
 import { toast } from "sonner";
 import type { Finding, FindingCategory } from "@/lib/types";
+import { findingMarkdown } from "@/lib/reportMarkdown";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { SnaggedStamp } from "@/components/SnaggedStamp";
 
@@ -34,29 +35,11 @@ function CategoryBadge({ category }: { category: FindingCategory }) {
   );
 }
 
-function toIssueMarkdown(f: Finding): string {
-  const parts = [
-    `## ${f.title}`,
-    ``,
-    `**Category:** ${f.category}  ·  **Severity:** ${f.severity}`,
-  ];
-  parts.push(``, `**What happens:** ${f.detail || "(none)"}`);
-  if (f.selector) parts.push(``, `**Element:** \`${f.selector}\``);
-  if (f.suggestion) parts.push(``, `**Suggested fix:** ${f.suggestion}`);
-  if (f.fix) parts.push(``, `**Root-cause fix:**`, "```", f.fix, "```");
-  if (f.repro.length) parts.push(``, `**Steps to reproduce:**`, ...f.repro);
-  if (f.evidence.length) parts.push(``, `**Evidence:**`, "```", ...f.evidence, "```");
-  if (f.docsUrl) parts.push(``, `**How to fix:** ${f.docsUrl}`);
-  if (f.screenshotPath) parts.push(``, `![screenshot](${f.screenshotPath})`);
-  parts.push(``, `_Found by Snag._`);
-  return parts.join("\n");
-}
-
 export function FindingCard({ f }: { f: Finding }) {
   const docsHref = safeHref(f.docsUrl);
   async function copy() {
     try {
-      await navigator.clipboard.writeText(toIssueMarkdown(f));
+      await navigator.clipboard.writeText(findingMarkdown(f));
       toast.success("Copied. Paste into a new GitHub issue.");
     } catch {
       toast.error("Couldn't copy to clipboard.");

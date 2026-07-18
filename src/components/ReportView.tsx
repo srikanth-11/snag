@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { Finding, FindingCategory, Severity } from "@/lib/types";
+import { reportMarkdown } from "@/lib/reportMarkdown";
 import { FindingCard } from "@/components/FindingCard";
 import { HealthRing } from "@/components/HealthRing";
 import { SEVERITY_ORDER } from "@/components/SeverityBadge";
@@ -59,12 +60,14 @@ export default function ReportView({
   grade,
   pages,
   summary,
+  url,
 }: {
   findings: Finding[];
   score: number;
   grade: string;
   pages: number;
   summary?: string;
+  url: string;
 }) {
   const [cats, setCats] = useState<Set<FindingCategory>>(new Set());
   const [sevMax, setSevMax] = useState(3);
@@ -118,6 +121,22 @@ export default function ReportView({
     }
   };
 
+  const exportMd = () => {
+    const md = reportMarkdown({ url, score, grade, summary, findings });
+    const blob = new Blob([md], { type: "text/markdown" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    let host = "report";
+    try {
+      host = new URL(url).host;
+    } catch {
+      // keep default
+    }
+    a.download = `snag-${host}.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   return (
     <div>
       {/* Executive summary */}
@@ -153,12 +172,18 @@ export default function ReportView({
               ))}
             </div>
           </div>
-          <div className="flex shrink-0 gap-2 print:hidden">
+          <div className="flex shrink-0 flex-wrap gap-2 print:hidden">
             <button
               onClick={share}
               className="rounded-lg border border-edge px-3.5 py-2 text-sm text-bone transition-colors hover:border-proof/50"
             >
               Share
+            </button>
+            <button
+              onClick={exportMd}
+              className="rounded-lg border border-edge px-3.5 py-2 text-sm text-bone transition-colors hover:border-proof/50"
+            >
+              Export .md
             </button>
             <button
               onClick={() => window.print()}

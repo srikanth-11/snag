@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import HuntList from "@/components/HuntList";
+import { Sparkline } from "@/components/Sparkline";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabase } from "@/lib/env";
 import { listUserJobs } from "@/lib/db";
@@ -26,6 +27,12 @@ export default async function DashboardPage() {
   const jobs = await listUserJobs(supabase, user.id);
   const totalFindings = jobs.reduce((s, j) => s + j.findingCount, 0);
   const running = jobs.filter((j) => j.status === "running" || j.status === "queued").length;
+  // Issues per hunt over the recent completed runs (oldest → newest).
+  const trend = jobs
+    .filter((j) => j.status === "done")
+    .slice(0, 12)
+    .reverse()
+    .map((j) => j.findingCount);
 
   return (
     <AppShell email={user.email ?? ""}>
@@ -45,6 +52,16 @@ export default async function DashboardPage() {
           <Stat label="Findings" value={totalFindings} />
           <Stat label="Running" value={running} />
         </div>
+
+        {trend.length >= 2 && (
+          <div className="mt-4 rounded-xl border border-edge bg-ash/40 p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-smoke">Issues per hunt (lower is better)</span>
+              <span className="font-mono text-xs text-smoke">last {trend.length}</span>
+            </div>
+            <Sparkline points={trend} className="mt-3 h-10 w-full" />
+          </div>
+        )}
 
         <div className="mt-8">
           {jobs.length === 0 ? (

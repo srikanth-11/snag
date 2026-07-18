@@ -22,23 +22,28 @@ vision-driven agent that decides what to do next from what is actually on the
 screen, backed by deterministic accessibility, performance, and responsive
 audits so the findings hold up.
 
-> **Want to try it without signing up?** The launcher has demo buttons pointed at
-> real public apps. You get one free hunt, then create an account to test your own.
+> **Want to see it first?** Watch a real recorded run replay instantly on the
+> demo page — no signup. Or run one free hunt yourself against a public app, then
+> create an account to test your own.
 
 ## What makes it different
 
 Most "AI testing" tools generate a test file and stop. Snag actually drives the
-app and reports what it finds. Four things it puts together that rarely ship in
+app and reports what it finds. Five things it puts together that rarely ship in
 one product:
 
 - **A live agent, not a script.** A vision model looks at each screenshot plus a
   DOM digest and picks the next move. It explores across pages, avoids repeating
   itself, and runs real end-to-end journeys like login, sign-up, and checkout.
 - **The Agent Theater.** Every thought, action, and screenshot streams to your
-  browser as the hunt happens, so you can see why it clicked what it clicked.
+  browser as the hunt happens, so you can see why it clicked what it clicked — and
+  you can stop the hunt at any time.
 - **A skeptic pass.** A second model reviews each candidate finding and throws
   out the false alarms before they reach your report. That is the number one
   complaint about QA bots, handled.
+- **An AI-written report.** When the hunt finishes, the model writes a plain-
+  English summary of the run and generates a concrete root-cause fix for the worst
+  findings — not just a link to a rule.
 - **Multi-tenant and real.** Supabase auth, per-account history, row-level
   security, and a daily quota. Every account is fully isolated.
 
@@ -58,8 +63,20 @@ A manual QA pass, automated:
 
 Every finding gets a severity, a category (so the report filters down to, say,
 just accessibility), a fix suggestion, a docs link, and where it can, a cropped
-screenshot of the exact spot. The report carries a health score and a regression
-diff against the previous run on the same URL.
+screenshot of the exact spot.
+
+## The report you get
+
+Snag's report is built to hand straight to a developer:
+
+- **A plain-English summary** the model writes about the run: the overall state,
+  the weakest area, and the single most important thing to fix first.
+- **Concrete root-cause fixes** for the most serious findings, with a code snippet
+  where it helps.
+- **Grouped and filterable** by category and severity, with a health score (A–F)
+  and a regression diff against the previous run on the same URL.
+- **Take it anywhere:** copy any finding as a GitHub issue, export the whole
+  report as Markdown, or download a print-ready PDF.
 
 ## How a hunt works
 
@@ -76,9 +93,10 @@ flowchart LR
   L --> FL[flow runner]
   AX & PF & FL & V --> SK[Skeptic verify]
   SK --> BUS[(in-process event bus)]
-  BUS -->|SSE| T[Agent Theater<br/>live in the browser]
+  BUS -->|SSE| T[Agent Theater<br/>live · stoppable]
   BUS --> DB[(Supabase<br/>jobs · findings · steps)]
-  DB --> R[Report<br/>score · filters · diff]
+  DB --> EN[AI enrich<br/>summary · root-cause fixes]
+  EN --> R[Report<br/>score · filters · diff · PDF]
 ```
 
 The worker and the web server run in one container, so the live event bus is just
