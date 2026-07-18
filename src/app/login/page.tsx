@@ -19,7 +19,7 @@ export default function LoginPage() {
         </div>
         <p className="mt-6 text-sm text-smoke">
           New here?{" "}
-          <Link href="/signup" className="text-proof hover:underline">
+          <Link href="/signup" className="text-proof underline underline-offset-2">
             Create an account
           </Link>
         </p>

@@ -19,7 +19,7 @@ export default function SignupPage() {
         </div>
         <p className="mt-6 text-sm text-smoke">
           Already have an account?{" "}
-          <Link href="/login" className="text-proof hover:underline">
+          <Link href="/login" className="text-proof underline underline-offset-2">
             Log in
           </Link>
         </p>

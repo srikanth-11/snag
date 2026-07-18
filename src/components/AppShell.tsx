@@ -38,6 +38,7 @@ export default function AppShell({
           key={n.href}
           href={n.href}
           onClick={() => setOpen(false)}
+          aria-current={active(n.href) ? "page" : undefined}
           className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
             active(n.href)
               ? "bg-ember/15 text-ember"
