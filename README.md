@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/snag-banner.png" alt="Snag — find the snags before your users do" width="560">
+  <img src="public/snag-banner.png" alt="Snag: find the snags before your users do" width="560">
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@ screen, backed by deterministic accessibility, performance, and responsive
 audits so the findings hold up.
 
 > **Want to see it first?** Watch a real recorded run replay instantly on the
-> demo page — no signup. Or run one free hunt yourself against a public app, then
+> demo page, no signup. Or run one free hunt yourself against a public app, then
 > create an account to test your own.
 
 ## What makes it different
@@ -36,14 +36,14 @@ one product:
   DOM digest and picks the next move. It explores across pages, avoids repeating
   itself, and runs real end-to-end journeys like login, sign-up, and checkout.
 - **The Agent Theater.** Every thought, action, and screenshot streams to your
-  browser as the hunt happens, so you can see why it clicked what it clicked — and
+  browser as the hunt happens, so you can see why it clicked what it clicked, and
   you can stop the hunt at any time.
 - **A skeptic pass.** A second model reviews each candidate finding and throws
   out the false alarms before they reach your report. That is the number one
   complaint about QA bots, handled.
 - **An AI-written report.** When the hunt finishes, the model writes a plain-
   English summary of the run and generates a concrete root-cause fix for the worst
-  findings — not just a link to a rule.
+  findings, not just a link to a rule.
 - **Multi-tenant and real.** Supabase auth, per-account history, row-level
   security, and a daily quota. Every account is fully isolated.
 
@@ -75,8 +75,8 @@ Snag's report is built to hand straight to a developer:
   where it helps.
 - **Grouped and filterable** by category and severity, with a health score (A–F)
   and a regression diff against the previous run on the same URL.
-- **Take it anywhere:** copy any finding as a GitHub issue, export the whole
-  report as Markdown, or download a print-ready PDF.
+- **Take it anywhere:** copy any finding as a GitHub issue, or download a
+  print-ready PDF of the whole report.
 
 ## How a hunt works
 
