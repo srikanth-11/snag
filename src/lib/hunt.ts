@@ -4,6 +4,7 @@ import { runHunt } from "@/lib/agent/loop";
 import { createPlaywrightDriver, closeBrowser } from "@/lib/browser";
 import { detectSoft } from "@/lib/agent/detect";
 import { screenFindings } from "@/lib/agent/skeptic";
+import { discoverFlows } from "@/lib/agent/flow";
 import { think } from "@/lib/llm";
 import { publish } from "@/lib/bus";
 import { addStep, addFinding, setJobStatus } from "@/lib/db";
@@ -16,6 +17,7 @@ export async function startHunt(input: {
   url: string;
   persona: PersonaKey;
   auth?: HuntAuth;
+  flows?: string[];
 }): Promise<void> {
   const { jobId, url, persona, auth } = input;
 
@@ -44,6 +46,15 @@ export async function startHunt(input: {
   let cropSeq = 0;
   try {
     const driver = await createPlaywrightDriver(url, auth);
+
+    // Combine user-named flows with a couple the agent discovers from the page.
+    const auto = await discoverFlows(
+      await driver.screenshot(),
+      await driver.digest(),
+      (a) => think(a),
+    );
+    const flows = [...(input.flows ?? []), ...auto];
+
     await runHunt({
       url,
       persona,
@@ -63,6 +74,8 @@ export async function startHunt(input: {
         screenFindings(
           await detectSoft({ imageB64: a.imageB64, url: a.url, actions: a.actions }),
         ),
+      flows,
+      flowThink: (a) => think(a),
     });
   } catch (err) {
     await setJobStatus(jobId, "error", {

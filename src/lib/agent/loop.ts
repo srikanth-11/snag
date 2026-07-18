@@ -1,7 +1,9 @@
 import type { Action, Finding, StreamEvent } from "@/lib/types";
+import type { ThinkJson } from "@/lib/llm";
 import { buildPrompt, pickPersona, type PersonaKey } from "@/lib/agent/persona";
 import { buildRepro } from "@/lib/agent/repro";
 import { classifySeverity, type Evidence } from "@/lib/agent/observers";
+import { runFlow } from "@/lib/agent/flow";
 
 // The loop drives an abstract Driver so its orchestration logic is testable
 // without launching a real browser. browser.ts provides the Playwright driver.
@@ -32,6 +34,10 @@ export interface HuntOptions {
   saveShot?: (step: number, imageB64: string) => Promise<string>;
   /** Uploads a cropped element screenshot, returns its URL. */
   uploadCrop?: (b64: string) => Promise<string>;
+  /** Named user flows to drive to completion after exploration. */
+  flows?: string[];
+  /** Think fn for the flow runner (returns {action,status,reason}). */
+  flowThink?: ThinkJson;
   /**
    * Optional soft-failure pass, run every 5 steps. Should return findings that
    * are already skeptic-screened (the orchestrator wires detect + skeptic here).
@@ -217,6 +223,25 @@ export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
     // Stop only after a long stretch with no new page and no new finding — by
     // then the agent has genuinely run out of places to go.
     if (idle >= 10) break;
+  }
+
+  // After exploration, drive each named flow to completion.
+  if (opts.flows?.length && opts.flowThink) {
+    let flowIdx = 0;
+    for (const goal of opts.flows.slice(0, 4)) {
+      const f = await runFlow({
+        goal,
+        driver,
+        think: opts.flowThink,
+        emit,
+        saveShot: (n, b64) => saveShot(10000 + flowIdx * 100 + n, b64),
+      });
+      flowIdx++;
+      if (f) {
+        findings.push(f);
+        await emit({ type: "finding", finding: f });
+      }
+    }
   }
 
   await driver.dispose();

@@ -19,6 +19,7 @@ export default function UrlLauncher() {
   const [loginUrl, setLoginUrl] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [flows, setFlows] = useState("");
 
   async function run(target: string, withAuth = false) {
     if (!target || busy) return;
@@ -28,10 +29,16 @@ export default function UrlLauncher() {
       const payload: {
         url: string;
         auth?: { loginUrl?: string; username: string; password: string };
+        flows?: string[];
       } = { url: target };
       if (withAuth && username && password) {
         payload.auth = { loginUrl: loginUrl.trim() || undefined, username, password };
       }
+      const flowList = flows
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (flowList.length) payload.flows = flowList;
       const res = await fetch("/api/hunt", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -121,6 +128,19 @@ export default function UrlLauncher() {
           </p>
         </div>
       )}
+
+      <div className="mt-2">
+        <textarea
+          value={flows}
+          onChange={(e) => setFlows(e.target.value)}
+          rows={2}
+          placeholder="Flows to test end-to-end (optional, one per line) — e.g. sign up for an account"
+          className="w-full resize-none rounded-lg border border-edge bg-ash px-4 py-2.5 text-sm text-bone placeholder:text-smoke/70 focus:border-proof/60"
+        />
+        <p className="mt-1 text-xs text-smoke">
+          Snag also auto-detects a couple of key flows.
+        </p>
+      </div>
 
       {error && <p className="mt-2 text-sm text-ember">{error}</p>}
 

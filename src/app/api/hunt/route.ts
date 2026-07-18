@@ -27,7 +27,12 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as {
     url?: string;
     auth?: { loginUrl?: string; username?: string; password?: string };
+    flows?: string[];
   } | null;
+
+  const flows = Array.isArray(body?.flows)
+    ? body.flows.filter((s) => typeof s === "string" && s.trim()).map((s) => s.trim()).slice(0, 4)
+    : undefined;
 
   const safe = await isSafeTarget(typeof body?.url === "string" ? body.url.trim() : "");
   if (!safe.ok) {
@@ -62,7 +67,7 @@ export async function POST(req: Request) {
 
   // Fire and forget — the client follows progress over SSE. Credentials are
   // passed straight to the worker and never persisted with the job.
-  void startHunt({ jobId, url: safe.url, persona, auth });
+  void startHunt({ jobId, url: safe.url, persona, auth, flows });
 
   return NextResponse.json({ id: jobId });
 }

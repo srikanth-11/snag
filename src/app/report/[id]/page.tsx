@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import ReportView from "@/components/ReportView";
 import { createClient } from "@/lib/supabase/server";
-import { getJob, getFindings, getSteps } from "@/lib/db";
-import { dedupe } from "@/lib/agent/dedupe";
+import { getJob, getFindings, getSteps, findPreviousJobId } from "@/lib/db";
+import { dedupe, findingKey } from "@/lib/agent/dedupe";
 import { healthScore } from "@/lib/score";
 
 export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,6 +30,20 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   ).size;
   const { score, grade } = healthScore(findings);
 
+  // Regression diff vs the previous completed run on the same URL.
+  const prevId = await findPreviousJobId(supabase, job.url, job.createdAt);
+  let diff: { added: number; fixed: number; same: number } | null = null;
+  if (prevId) {
+    const prev = dedupe(await getFindings(supabase, prevId));
+    const curKeys = new Set(findings.map(findingKey));
+    const prevKeys = new Set(prev.map(findingKey));
+    diff = {
+      added: findings.filter((f) => !prevKeys.has(findingKey(f))).length,
+      fixed: prev.filter((f) => !curKeys.has(findingKey(f))).length,
+      same: findings.filter((f) => prevKeys.has(findingKey(f))).length,
+    };
+  }
+
   return (
     <AppShell email={user?.email ?? ""}>
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
@@ -45,6 +59,21 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             Run again
           </Link>
         </div>
+
+        {diff && (
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+            <span className="rounded-full border border-ember/40 bg-ember/10 px-3 py-1 text-ember">
+              {diff.added} new
+            </span>
+            <span className="rounded-full border border-proof/40 bg-proof/10 px-3 py-1 text-proof">
+              {diff.fixed} fixed
+            </span>
+            <span className="rounded-full border border-edge px-3 py-1 text-smoke">
+              {diff.same} still present
+            </span>
+            <span className="text-xs text-smoke">since the previous run on this URL</span>
+          </div>
+        )}
 
         {findings.length === 0 ? (
           <div className="mt-8 rounded-xl border border-edge bg-ash/40 p-10 text-center text-smoke">

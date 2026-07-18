@@ -11,7 +11,7 @@ function norm(s: string): string {
   return s.toLowerCase().replace(/\d+/g, "#").replace(/\s+/g, " ").trim().slice(0, 120);
 }
 
-function key(f: Finding): string {
+export function findingKey(f: Finding): string {
   return `${f.category}|${norm(f.title)}|${norm(f.selector ?? f.evidence[0] ?? "")}`;
 }
 
@@ -20,7 +20,7 @@ function key(f: Finding): string {
 export function dedupe(findings: Finding[]): Finding[] {
   const map = new Map<string, Finding>();
   for (const f of findings) {
-    const k = key(f);
+    const k = findingKey(f);
     const existing = map.get(k);
     if (!existing) {
       map.set(k, { ...f, evidence: [...f.evidence] });

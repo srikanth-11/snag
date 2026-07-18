@@ -109,6 +109,24 @@ export async function getJob(client: SupabaseClient, id: string): Promise<Job | 
   return data ? mapJob(data as JobRow) : null;
 }
 
+// Most recent completed hunt on the same URL before this one (for regression diff).
+export async function findPreviousJobId(
+  client: SupabaseClient,
+  url: string,
+  beforeIso: string,
+): Promise<string | null> {
+  const { data } = await client
+    .from("jobs")
+    .select("id")
+    .eq("url", url)
+    .eq("status", "done")
+    .lt("created_at", beforeIso)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
 export async function listUserJobs(
   client: SupabaseClient,
   userId: string,
