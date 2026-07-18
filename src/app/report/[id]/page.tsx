@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Nav from "@/components/Nav";
+import AppShell from "@/components/AppShell";
 import { FindingCard } from "@/components/FindingCard";
 import { SEVERITY_ORDER } from "@/components/SeverityBadge";
 import { createClient } from "@/lib/supabase/server";
@@ -29,6 +29,9 @@ const CATEGORY_TITLE: Record<FindingCategory, string> = {
 export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const job = await getJob(supabase, id);
   if (!job) notFound();
 
@@ -41,8 +44,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   })).filter((g) => g.items.length);
 
   return (
-    <>
-      <Nav />
+    <AppShell email={user?.email ?? ""}>
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -98,6 +100,6 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           </>
         )}
       </main>
-    </>
+    </AppShell>
   );
 }

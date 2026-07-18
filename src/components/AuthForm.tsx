@@ -39,65 +39,70 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
       return;
     }
     if (mode === "signup") {
-      setMessage({ tone: "info", text: "Account created. Check your email to confirm, then log in." });
+      setMessage({
+        tone: "info",
+        text: "Account created. Check your email to confirm, then log in.",
+      });
       return;
     }
     router.push(next);
     router.refresh();
   }
 
-  async function onGoogle() {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
-    });
-  }
-
+  const label = "text-sm text-bone";
   const field =
     "w-full rounded-lg border border-edge bg-ash px-4 py-2.5 text-sm text-bone placeholder:text-smoke/70 focus:border-proof/60";
 
   return (
-    <div className="flex flex-col gap-4">
-      <form onSubmit={onSubmit} className="flex flex-col gap-3">
+    <form onSubmit={onSubmit} className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="email" className={label}>
+          Email
+        </label>
         <input
+          id="email"
           type="email"
           required
+          autoComplete="email"
           placeholder="you@work.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={field}
         />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="password" className={label}>
+          Password
+        </label>
         <input
+          id="password"
           type="password"
           required
           minLength={8}
-          placeholder="Password (8+ characters)"
+          autoComplete={mode === "login" ? "current-password" : "new-password"}
+          placeholder="8+ characters"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className={field}
         />
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-ember px-4 py-2.5 font-medium text-void transition-opacity hover:opacity-90 disabled:opacity-60"
-        >
-          {loading ? "…" : mode === "login" ? "Log in" : "Create account"}
-        </button>
-      </form>
+      </div>
 
       <button
-        onClick={onGoogle}
-        className="rounded-lg border border-edge bg-ash px-4 py-2.5 text-sm text-bone transition-colors hover:border-proof/50"
+        type="submit"
+        disabled={loading}
+        className="mt-1 rounded-lg bg-ember px-4 py-2.5 font-medium text-void transition-opacity hover:opacity-90 disabled:opacity-60"
       >
-        Continue with Google
+        {loading ? "…" : mode === "login" ? "Log in" : "Create account"}
       </button>
 
       {message && (
-        <p className={`text-sm ${message.tone === "error" ? "text-ember" : "text-proof"}`}>
+        <p
+          role={message.tone === "error" ? "alert" : undefined}
+          className={`text-sm ${message.tone === "error" ? "text-ember" : "text-proof"}`}
+        >
           {message.text}
         </p>
       )}
-    </div>
+    </form>
   );
 }
