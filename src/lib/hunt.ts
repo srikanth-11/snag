@@ -5,6 +5,7 @@ import { createPlaywrightDriver, closeBrowser } from "@/lib/browser";
 import { detectSoft } from "@/lib/agent/detect";
 import { screenFindings } from "@/lib/agent/skeptic";
 import { discoverFlows } from "@/lib/agent/flow";
+import { enrichHunt } from "@/lib/agent/enrich";
 import { think } from "@/lib/llm";
 import { publish } from "@/lib/bus";
 import { isCancelled, clearCancel } from "@/lib/control";
@@ -59,7 +60,7 @@ export async function startHunt(input: {
     );
     const flows = [...(input.flows ?? []), ...auto];
 
-    await runHunt({
+    const findings = await runHunt({
       url,
       persona,
       driver,
@@ -82,6 +83,13 @@ export async function startHunt(input: {
       flowThink: (a) => think(a),
       shouldStop: () => isCancelled(jobId),
     });
+
+    // Post-hunt AI enrichment (summary + root-cause fixes). Never fails the hunt.
+    try {
+      await enrichHunt(jobId, url, findings);
+    } catch {
+      // best-effort
+    }
   } catch (err) {
     await setJobStatus(jobId, "error", {
       error: err instanceof Error ? err.message : "hunt failed",

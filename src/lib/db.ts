@@ -90,6 +90,7 @@ interface JobRow {
   status: JobStatus;
   persona: string | null;
   error: string | null;
+  summary?: string | null;
   created_at: string;
   finished_at: string | null;
 }
@@ -101,9 +102,39 @@ function mapJob(row: JobRow): Job {
     status: row.status,
     persona: row.persona ?? undefined,
     error: row.error ?? undefined,
+    summary: row.summary ?? undefined,
     createdAt: row.created_at,
     finishedAt: row.finished_at ?? undefined,
   };
+}
+
+export async function setJobSummary(id: string, summary: string): Promise<void> {
+  await adminClient().from("jobs").update({ summary }).eq("id", id);
+}
+
+// Top findings that warrant a generated root-cause fix (server-side, with ids).
+export interface FixTarget {
+  id: number;
+  title: string;
+  detail: string | null;
+  category: string | null;
+  severity: string;
+  selector: string | null;
+}
+
+export async function getTopFindingsForFix(jobId: string, limit: number): Promise<FixTarget[]> {
+  const { data } = await adminClient()
+    .from("findings")
+    .select("id, title, detail, category, severity, selector")
+    .eq("job_id", jobId)
+    .in("severity", ["critical", "high"])
+    .order("severity", { ascending: true }) // 'critical' < 'high' alphabetically
+    .limit(limit);
+  return (data ?? []) as FixTarget[];
+}
+
+export async function setFindingFix(id: number, fix: string): Promise<void> {
+  await adminClient().from("findings").update({ fix }).eq("id", id);
 }
 
 export async function getJob(client: SupabaseClient, id: string): Promise<Job | null> {
@@ -156,6 +187,7 @@ interface FindingRow {
   selector: string | null;
   docs_url: string | null;
   suggestion: string | null;
+  fix: string | null;
   screenshot_path: string | null;
   verified: boolean;
 }
@@ -180,6 +212,7 @@ export async function getFindings(client: SupabaseClient, jobId: string): Promis
         selector: r.selector ?? undefined,
         docsUrl: r.docs_url ?? undefined,
         suggestion: r.suggestion ?? undefined,
+        fix: r.fix ?? undefined,
         screenshotPath: r.screenshot_path ? (await signShot(r.screenshot_path)) || undefined : undefined,
         verified: r.verified,
       };

@@ -43,6 +43,7 @@ function toIssueMarkdown(f: Finding): string {
   parts.push(``, `**What happens:** ${f.detail || "(none)"}`);
   if (f.selector) parts.push(``, `**Element:** \`${f.selector}\``);
   if (f.suggestion) parts.push(``, `**Suggested fix:** ${f.suggestion}`);
+  if (f.fix) parts.push(``, `**Root-cause fix:**`, "```", f.fix, "```");
   if (f.repro.length) parts.push(``, `**Steps to reproduce:**`, ...f.repro);
   if (f.evidence.length) parts.push(``, `**Evidence:**`, "```", ...f.evidence, "```");
   if (f.docsUrl) parts.push(``, `**How to fix:** ${f.docsUrl}`);
@@ -82,6 +83,15 @@ export function FindingCard({ f }: { f: Finding }) {
           <span className="font-medium text-proof">Suggested fix: </span>
           {f.suggestion}
         </p>
+      )}
+
+      {f.fix && (
+        <div className="mt-3 rounded-lg border border-proof/25 bg-void/40 p-3">
+          <p className="mb-1.5 font-mono text-[11px] uppercase tracking-wider text-proof">
+            Root-cause fix
+          </p>
+          <p className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-bone">{f.fix}</p>
+        </div>
       )}
 
       {f.repro.length > 0 && (

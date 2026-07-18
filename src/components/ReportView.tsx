@@ -58,11 +58,13 @@ export default function ReportView({
   score,
   grade,
   pages,
+  summary,
 }: {
   findings: Finding[];
   score: number;
   grade: string;
   pages: number;
+  summary?: string;
 }) {
   const [cats, setCats] = useState<Set<FindingCategory>>(new Set());
   const [sevMax, setSevMax] = useState(3);
@@ -127,7 +129,10 @@ export default function ReportView({
             <p className="mt-1.5 font-display text-xl font-semibold leading-snug">
               {verdictFor(grade)}
             </p>
-            <p className="mt-1 text-sm text-smoke">
+            {summary && (
+              <p className="mt-2 text-sm leading-relaxed text-bone/85">{summary}</p>
+            )}
+            <p className="mt-2 text-sm text-smoke">
               {findings.length} {findings.length === 1 ? "issue" : "issues"} across {pages}{" "}
               {pages === 1 ? "page" : "pages"}
               {topCat ? (

@@ -91,7 +91,13 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             Snag found nothing to catch. Either your app is solid or the target needs to be harder.
           </div>
         ) : (
-          <ReportView findings={findings} score={score} grade={grade} pages={Math.max(1, pages)} />
+          <ReportView
+            findings={findings}
+            score={score}
+            grade={grade}
+            pages={Math.max(1, pages)}
+            summary={job.summary}
+          />
         )}
     </main>
   );
