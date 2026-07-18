@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { TopLoader } from "@/components/TopLoader";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -48,6 +49,7 @@ export default function RootLayout({
       className={`${bricolage.variable} ${hanken.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <TopLoader />
         {children}
         <Toaster theme="dark" position="bottom-right" />
       </body>

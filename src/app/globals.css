@@ -42,6 +42,17 @@ body {
   color: var(--void);
 }
 
+/* Browsers default <button> to an arrow cursor; make anything clickable feel it. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary,
+label[for] {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
 .edge {
   border-color: var(--edge);
 }
