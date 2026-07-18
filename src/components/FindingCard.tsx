@@ -30,6 +30,7 @@ function toIssueMarkdown(f: Finding): string {
   ];
   parts.push(``, `**What happens:** ${f.detail || "—"}`);
   if (f.selector) parts.push(``, `**Element:** \`${f.selector}\``);
+  if (f.suggestion) parts.push(``, `**Suggested fix:** ${f.suggestion}`);
   if (f.repro.length) parts.push(``, `**Steps to reproduce:**`, ...f.repro);
   if (f.evidence.length) parts.push(``, `**Evidence:**`, "```", ...f.evidence, "```");
   if (f.docsUrl) parts.push(``, `**How to fix:** ${f.docsUrl}`);
@@ -61,6 +62,13 @@ export function FindingCard({ f }: { f: Finding }) {
 
       {f.selector && (
         <p className="mt-2 break-all font-mono text-xs text-proof">{f.selector}</p>
+      )}
+
+      {f.suggestion && (
+        <p className="mt-3 rounded-lg border border-proof/20 bg-proof/5 p-3 text-sm text-bone">
+          <span className="font-medium text-proof">Suggested fix: </span>
+          {f.suggestion}
+        </p>
       )}
 
       {f.repro.length > 0 && (

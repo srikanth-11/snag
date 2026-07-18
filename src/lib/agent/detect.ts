@@ -4,7 +4,7 @@ import { SOFT_FINDINGS_SHAPE } from "@/lib/llm/schemas";
 import { buildRepro } from "@/lib/agent/repro";
 
 interface SoftRaw {
-  findings?: { title?: string; detail?: string; severity?: string }[];
+  findings?: { title?: string; detail?: string; severity?: string; suggestion?: string }[];
 }
 
 function normalizeSeverity(s?: string): Severity {
@@ -45,6 +45,7 @@ ${SOFT_FINDINGS_SHAPE}`;
     detail: (f.detail ?? "").slice(0, 400),
     evidence: [],
     repro: buildRepro(opts.actions),
+    suggestion: f.suggestion?.slice(0, 300),
     screenshotPath: undefined,
     verified: false,
   }));

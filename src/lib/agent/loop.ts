@@ -52,6 +52,17 @@ function titleFor(ev: Evidence): string {
   }
 }
 
+function suggestionFor(ev: Evidence): string {
+  switch (ev.type) {
+    case "http":
+      return "Check the server logs for this endpoint and handle the error response in the UI.";
+    case "pageerror":
+      return "Guard against the null/undefined value that threw, and add error handling.";
+    case "console":
+      return "Open the browser console, trace this error to its source, and fix it.";
+  }
+}
+
 function hardFinding(ev: Evidence, actions: Action[], shotPath?: string): Finding {
   return {
     kind: "hard",
@@ -61,6 +72,7 @@ function hardFinding(ev: Evidence, actions: Action[], shotPath?: string): Findin
     detail: ev.text,
     evidence: [ev.text],
     repro: buildRepro(actions),
+    suggestion: suggestionFor(ev),
     screenshotPath: shotPath || undefined,
     // Hard findings come from the browser itself — objectively real.
     verified: true,

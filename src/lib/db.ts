@@ -72,6 +72,7 @@ export async function addFinding(jobId: string, f: Finding): Promise<void> {
     category: f.category,
     docs_url: f.docsUrl ?? null,
     selector: f.selector ?? null,
+    suggestion: f.suggestion ?? null,
   };
   // Insert with the richer columns; fall back to the base shape if the migration
   // (0002) that adds category/docs_url/selector hasn't been run yet.
@@ -134,6 +135,7 @@ interface FindingRow {
   repro: string[] | null;
   selector: string | null;
   docs_url: string | null;
+  suggestion: string | null;
   screenshot_path: string | null;
   verified: boolean;
 }
@@ -156,6 +158,7 @@ export async function getFindings(client: SupabaseClient, jobId: string): Promis
       repro: r.repro ?? [],
       selector: r.selector ?? undefined,
       docsUrl: r.docs_url ?? undefined,
+      suggestion: r.suggestion ?? undefined,
       screenshotPath: r.screenshot_path ?? undefined,
       verified: r.verified,
     };

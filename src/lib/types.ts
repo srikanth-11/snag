@@ -35,6 +35,8 @@ export interface Finding {
   selector?: string;
   /** Link to guidance (e.g. the axe/WCAG rule help page). */
   docsUrl?: string;
+  /** One-line actionable fix suggestion. */
+  suggestion?: string;
   screenshotPath?: string;
   verified: boolean;
 }

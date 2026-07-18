@@ -11,7 +11,12 @@ export const ACTION_SHAPE = `{
 
 export const SOFT_FINDINGS_SHAPE = `{
   "findings": [
-    { "title": string, "detail": string, "severity": "critical"|"high"|"medium"|"low" }
+    {
+      "title": string,
+      "detail": string,
+      "severity": "critical"|"high"|"medium"|"low",
+      "suggestion": string  // one short, concrete fix
+    }
   ]
 }`;
 
