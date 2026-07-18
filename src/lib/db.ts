@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Action, Finding, FindingCategory, Job, JobStatus } from "@/lib/types";
 import { adminClient } from "@/lib/supabase/admin";
+import { signShot } from "@/lib/storage";
 
 export interface StepRecord {
   n: number;
@@ -164,23 +165,25 @@ export async function getFindings(client: SupabaseClient, jobId: string): Promis
     .select("*")
     .eq("job_id", jobId)
     .order("id", { ascending: true });
-  return (data ?? []).map((row) => {
-    const r = row as FindingRow;
-    return {
-      kind: r.kind,
-      category: r.category ?? (r.kind === "soft" ? "ux" : "error"),
-      severity: r.severity,
-      title: r.title,
-      detail: r.detail ?? "",
-      evidence: r.evidence ?? [],
-      repro: r.repro ?? [],
-      selector: r.selector ?? undefined,
-      docsUrl: r.docs_url ?? undefined,
-      suggestion: r.suggestion ?? undefined,
-      screenshotPath: r.screenshot_path ?? undefined,
-      verified: r.verified,
-    };
-  });
+  return Promise.all(
+    (data ?? []).map(async (row) => {
+      const r = row as FindingRow;
+      return {
+        kind: r.kind,
+        category: r.category ?? (r.kind === "soft" ? "ux" : "error"),
+        severity: r.severity,
+        title: r.title,
+        detail: r.detail ?? "",
+        evidence: r.evidence ?? [],
+        repro: r.repro ?? [],
+        selector: r.selector ?? undefined,
+        docsUrl: r.docs_url ?? undefined,
+        suggestion: r.suggestion ?? undefined,
+        screenshotPath: r.screenshot_path ? (await signShot(r.screenshot_path)) || undefined : undefined,
+        verified: r.verified,
+      };
+    }),
+  );
 }
 
 interface StepRow {

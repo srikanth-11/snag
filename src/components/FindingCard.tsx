@@ -14,6 +14,18 @@ const CATEGORY_LABEL: Record<FindingCategory, string> = {
   performance: "performance",
 };
 
+// Only allow http(s) links to render as an anchor (defensive — docsUrl today
+// comes only from axe-core, but never trust a URL blindly).
+function safeHref(u?: string): string | undefined {
+  if (!u) return undefined;
+  try {
+    const p = new URL(u).protocol;
+    return p === "http:" || p === "https:" ? u : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function CategoryBadge({ category }: { category: FindingCategory }) {
   return (
     <span className="rounded border border-edge bg-bone/5 px-2 py-0.5 font-mono text-[11px] lowercase text-smoke">
@@ -28,7 +40,7 @@ function toIssueMarkdown(f: Finding): string {
     ``,
     `**Category:** ${f.category}  ·  **Severity:** ${f.severity}`,
   ];
-  parts.push(``, `**What happens:** ${f.detail || "—"}`);
+  parts.push(``, `**What happens:** ${f.detail || "(none)"}`);
   if (f.selector) parts.push(``, `**Element:** \`${f.selector}\``);
   if (f.suggestion) parts.push(``, `**Suggested fix:** ${f.suggestion}`);
   if (f.repro.length) parts.push(``, `**Steps to reproduce:**`, ...f.repro);
@@ -40,6 +52,7 @@ function toIssueMarkdown(f: Finding): string {
 }
 
 export function FindingCard({ f }: { f: Finding }) {
+  const docsHref = safeHref(f.docsUrl);
   async function copy() {
     try {
       await navigator.clipboard.writeText(toIssueMarkdown(f));
@@ -101,9 +114,9 @@ export function FindingCard({ f }: { f: Finding }) {
         >
           Copy as GitHub issue
         </button>
-        {f.docsUrl && (
+        {docsHref && (
           <a
-            href={f.docsUrl}
+            href={docsHref}
             target="_blank"
             rel="noreferrer"
             className="text-sm text-proof hover:underline"

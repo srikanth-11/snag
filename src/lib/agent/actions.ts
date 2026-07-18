@@ -1,5 +1,6 @@
 import type { Page, Locator } from "playwright";
 import type { Action } from "@/lib/types";
+import { isBlockedHost } from "@/lib/ssrf";
 
 // Third-party sign-in the agent must never use — it leads off-site to an OAuth
 // provider and abandons the app under test. Email/password login is handled
@@ -59,6 +60,9 @@ export async function execute(page: Page, action: Action): Promise<void> {
       }
       if (host && SSO_DOMAIN.test(host)) {
         throw new Error(`refusing navigation to sign-in provider: ${host}`);
+      }
+      if (host && (await isBlockedHost(host))) {
+        throw new Error(`refusing navigation to private/local host: ${host}`);
       }
       await page.goto(action.value, { waitUntil: "domcontentloaded", timeout: 15000 });
       break;

@@ -140,3 +140,37 @@ export async function isSafeTarget(raw: string): Promise<SafeTarget> {
 
   return { ok: true, url: u.toString() };
 }
+
+// --- Network-layer guard for the browser ------------------------------------
+// isSafeTarget only validates the initial user string. Chromium then follows
+// redirects and the agent can navigate, so every request the browser makes must
+// be re-checked at the network layer (see createPlaywrightDriver's context.route).
+const hostBlockCache = new Map<string, boolean>();
+
+async function computeHostBlocked(host: string): Promise<boolean> {
+  if (net.isIP(host)) return isPrivateIp(host);
+  if (host === "localhost" || host.endsWith(".localhost")) return true;
+  // numeric/hex/octal-encoded IPv4 tricks
+  if (/^[0-9.]+$/.test(host) || /^0x/i.test(host)) return true;
+  try {
+    const results = await lookup(host, { all: true });
+    if (results.length === 0) return true;
+    return results.some((r) => isPrivateIp(r.address));
+  } catch {
+    return true; // can't resolve → don't let it through
+  }
+}
+
+// True if a request to this host must be blocked (private/loopback/link-local/
+// metadata, localhost, or a name that resolves to one). Empty host (data:,
+// blob:, about:) is allowed — no network egress. Cached per host.
+export async function isBlockedHost(host: string): Promise<boolean> {
+  if (!host) return false;
+  if (process.env.SNAG_ALLOW_LOCAL_TARGETS === "1") return false;
+  host = host.toLowerCase();
+  const hit = hostBlockCache.get(host);
+  if (hit !== undefined) return hit;
+  const blocked = await computeHostBlocked(host);
+  hostBlockCache.set(host, blocked);
+  return blocked;
+}

@@ -8,6 +8,7 @@ import { runAxe } from "@/lib/agent/a11y";
 import { runAudit } from "@/lib/agent/audit";
 import { runPerf } from "@/lib/agent/perf";
 import { runResponsive } from "@/lib/agent/responsive";
+import { isBlockedHost } from "@/lib/ssrf";
 
 let browser: Browser | null = null;
 
@@ -62,17 +63,18 @@ async function axDigestInner(page: Page): Promise<string> {
   const items = await page.evaluate(() => {
     const out: string[] = [];
     const els = document.querySelectorAll(
-      'a, button, input, textarea, select, [role="button"], [role="link"], [role="textbox"]',
+      'a, button, input:not([type="password"]), textarea, select, [role="button"], [role="link"], [role="textbox"]',
     );
     els.forEach((el) => {
       if (out.length > 90) return;
       const tag = el.getAttribute("role") ?? el.tagName.toLowerCase();
+      // Never read an element's .value — a typed credential must not reach the
+      // digest that goes to the LLM.
       const label =
         (el as HTMLElement).innerText?.trim() ||
         el.getAttribute("aria-label") ||
         el.getAttribute("placeholder") ||
         el.getAttribute("name") ||
-        (el as HTMLInputElement).value ||
         "";
       if (label) out.push(`${tag}: ${label}`.slice(0, 120));
     });
@@ -97,6 +99,24 @@ export async function createPlaywrightDriver(url: string, auth?: HuntAuth): Prom
   await context.addInitScript(() => {
     Object.defineProperty(navigator, "webdriver", { get: () => false });
   });
+
+  // SSRF guard at the network layer: isSafeTarget only vetted the initial URL,
+  // but redirects and agent-driven navigation can still reach private hosts.
+  // Abort any request whose host is private/loopback/link-local/metadata.
+  await context.route("**/*", async (route) => {
+    let host = "";
+    try {
+      host = new URL(route.request().url()).hostname;
+    } catch {
+      // no host (data:/blob:/about:) — allow
+    }
+    if (await isBlockedHost(host)) {
+      await route.abort("blockedbyclient").catch(() => {});
+      return;
+    }
+    await route.continue().catch(() => {});
+  });
+
   const page = await context.newPage();
 
   // Log in before observers attach, so the login page's own noise isn't

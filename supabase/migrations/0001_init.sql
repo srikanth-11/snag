@@ -80,7 +80,8 @@ create policy "findings via job" on findings
 -- Writes to jobs/steps/findings happen through the server with the service-role
 -- key (which bypasses RLS), so no INSERT policies are granted to anon/authenticated.
 
--- Storage bucket for screenshots (public read). Create once:
+-- Storage bucket for screenshots. Private — screenshots can capture
+-- authenticated hunts, so they are served only via signed URLs. Create once:
 insert into storage.buckets (id, name, public)
-values ('shots', 'shots', true)
+values ('shots', 'shots', false)
 on conflict (id) do nothing;
