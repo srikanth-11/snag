@@ -93,7 +93,7 @@ export default function UrlLauncher() {
         <div className="mt-2 flex flex-col gap-2 rounded-xl border border-edge bg-ash/40 p-4">
           <input
             inputMode="url"
-            placeholder="Login page URL (optional — defaults to the target)"
+            placeholder="Login page URL (optional, defaults to the target)"
             value={loginUrl}
             onChange={(e) => setLoginUrl(e.target.value)}
             className={field}
@@ -114,8 +114,8 @@ export default function UrlLauncher() {
             className={field}
           />
           <p className="text-xs text-smoke">
-            Used once for this hunt. Never saved, never sent to the AI — only the browser
-            logs in.
+            We use it once for this hunt. It is never saved and never sent to the AI.
+            Only the browser uses it to log in.
           </p>
         </div>
       )}
@@ -125,7 +125,7 @@ export default function UrlLauncher() {
           value={flows}
           onChange={(e) => setFlows(e.target.value)}
           rows={2}
-          placeholder="Flows to test end-to-end (optional, one per line) — e.g. sign up for an account"
+          placeholder="Flows to test end-to-end (optional, one per line). For example, sign up for an account"
           className="w-full resize-none rounded-lg border border-edge bg-ash px-4 py-2.5 text-sm text-bone placeholder:text-smoke/70 focus:border-proof/60"
         />
         <p className="mt-1 text-xs text-smoke">

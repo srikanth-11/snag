@@ -88,7 +88,7 @@ export default function ReportView({
             {pages === 1 ? "page" : "pages"}
           </p>
           <p className="mt-1 text-sm text-smoke">
-            Snag covers the automatable checks — a human still owns business logic.
+            Snag covers the checks a machine can run. You still own the business logic.
           </p>
         </div>
       </div>

@@ -19,9 +19,9 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Snag — find the snags before your users do",
+  title: "Snag: find the snags before your users do",
   description:
-    "Paste a URL. Snag turns loose an AI agent that attacks your live app like a hostile QA engineer, catches real bugs, and hands you a report you can ship.",
+    "Paste a URL and Snag sends an AI agent through your live app like a hostile QA engineer, catching the real bugs your users would hit and handing you a report you can ship.",
 };
 
 export default function RootLayout({

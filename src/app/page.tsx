@@ -54,7 +54,7 @@ function Stage() {
         <Note tone="proof">● POST /api/cart → 500</Note>
         <div className="mt-2 inline-flex w-fit -rotate-1 items-center gap-2 rounded border border-proof/50 bg-proof/10 px-2.5 py-1 font-mono text-[12px] font-semibold text-proof">
           <Hook className="h-3.5 w-3.5" />
-          SNAGGED — checkout crashes on long coupon
+          SNAGGED: checkout crashes on long coupon
         </div>
       </div>
     </div>
@@ -73,7 +73,7 @@ function HowItWorks() {
     },
     {
       k: "Reports",
-      d: "Every real bug comes with severity, repro steps, and a screenshot — copy it straight to GitHub.",
+      d: "Every real bug comes with a severity, repro steps, and a screenshot you can copy straight into GitHub.",
     },
   ];
   return (

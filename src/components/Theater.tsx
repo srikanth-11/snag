@@ -90,7 +90,7 @@ export function Theater({ jobId, initialStatus }: { jobId: string; initialStatus
                   ⚑ {e.action.kind}
                   {e.action.target ? ` “${e.action.target}”` : ""}
                 </span>
-                {e.thought && <span className="text-smoke"> — {e.thought}</span>}
+                {e.thought && <span className="text-smoke"> · {e.thought}</span>}
               </div>
             ) : e.type === "finding" ? (
               <div
