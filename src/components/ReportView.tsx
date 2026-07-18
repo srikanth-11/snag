@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import type { Finding, FindingCategory, Severity } from "@/lib/types";
 import { FindingCard } from "@/components/FindingCard";
 import { HealthRing } from "@/components/HealthRing";
@@ -109,15 +108,6 @@ export default function ReportView({
   }, [findings]);
   const topCat = (Object.keys(counts) as FindingCategory[]).sort((a, b) => counts[b] - counts[a])[0];
 
-  const share = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      toast.success("Report link copied.");
-    } catch {
-      toast.error("Couldn't copy the link.");
-    }
-  };
-
   return (
     <div>
       {/* Executive summary */}
@@ -154,12 +144,6 @@ export default function ReportView({
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2 print:hidden">
-            <button
-              onClick={share}
-              className="rounded-lg border border-edge px-3.5 py-2 text-sm text-bone transition-colors hover:border-proof/50"
-            >
-              Share
-            </button>
             <button
               onClick={() => window.print()}
               className="rounded-lg bg-ember px-3.5 py-2 text-sm font-medium text-void transition-opacity hover:opacity-90"
