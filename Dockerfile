@@ -10,6 +10,16 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+# NEXT_PUBLIC_* are inlined into the browser bundle at build time, so they must be
+# present during `npm run build`. On Hugging Face, set these as Space *Variables*
+# (they are public values, not secrets) so they arrive here as build args.
+ARG NEXT_PUBLIC_SUPABASE_URL=""
+ARG NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=""
+ARG NEXT_PUBLIC_SITE_URL=""
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
+    NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+
 COPY . .
 RUN npm run build
 

@@ -22,7 +22,7 @@ const DESC =
   "Paste a URL and Snag sends an AI agent through your live app like a thorough QA engineer, catching the real bugs your users would hit and handing you a report you can ship.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: "Snag: find the snags before your users do",
   description: DESC,
   openGraph: {
