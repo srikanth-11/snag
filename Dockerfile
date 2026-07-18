@@ -8,7 +8,9 @@ ENV HOME=/app \
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+# NODE_ENV=production would make npm skip devDependencies, but the build needs
+# them (tailwind, postcss, typescript). Force-include dev deps for the build.
+RUN npm ci --include=dev
 
 # NEXT_PUBLIC_* are inlined into the browser bundle at build time, so they must be
 # present during `npm run build`. On Hugging Face, set these as Space *Variables*
@@ -23,7 +25,8 @@ ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
 COPY . .
 RUN npm run build
 
-# Hugging Face Spaces run the container as uid 1000; make the app dir writable.
+# Run as a non-root uid and make the app dir writable (Next needs a writable
+# cache dir at runtime).
 RUN chown -R 1000:0 /app && chmod -R g+rwX /app
 USER 1000
 
