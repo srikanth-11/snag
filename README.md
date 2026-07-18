@@ -101,8 +101,8 @@ flowchart LR
 
 The worker and the web server run in one container, so the live event bus is just
 in-process pub/sub, with no queue and no extra infrastructure to stand up. That
-is also why it runs on a persistent container (Hugging Face) rather than on
-serverless functions.
+is also why it runs on a persistent Docker container (Render's free tier, or any
+Docker host) rather than on serverless functions.
 
 The vision model has a fallback chain (Gemini 3 Flash, then Flash-Lite, then
 NVIDIA NIM, then Groq) that rotates automatically on rate limits, so one provider
@@ -113,7 +113,7 @@ throttling a request never kills a hunt.
 | Layer | Choice |
 |---|---|
 | App and agent | **Next.js 16** (App Router) with an in-process **Playwright** worker, one Docker image |
-| Hosting | **Hugging Face** Spaces (Docker, persistent container) |
+| Hosting | **Render** free tier (Docker), or any persistent Docker host |
 | Data | **Supabase**: Auth, Postgres with RLS, and Storage |
 | Vision model | **Gemini 3 Flash**, then Flash-Lite, then **NVIDIA NIM**, then **Groq**, rotating on 429 |
 | Audits | **axe-core**, the raw Performance API, and DOM heuristics |

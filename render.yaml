@@ -1,0 +1,25 @@
+# Render Blueprint. New → Blueprint → connect this repo → Render reads this file,
+# then prompts for the env values below (they are not stored in git).
+services:
+  - type: web
+    name: snag
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    envVars:
+      # Public (inlined into the browser bundle at build time).
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: NEXT_PUBLIC_SITE_URL
+        sync: false
+      # Server-only.
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false

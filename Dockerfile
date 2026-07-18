@@ -28,4 +28,5 @@ RUN chown -R 1000:0 /app && chmod -R g+rwX /app
 USER 1000
 
 EXPOSE 7860
-CMD ["npm", "start", "--", "-H", "0.0.0.0", "-p", "7860"]
+# Shell form so $PORT (set by Render and most hosts) is honoured; falls back to 7860.
+CMD npm start -- -H 0.0.0.0 -p ${PORT:-7860}
