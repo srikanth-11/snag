@@ -15,7 +15,15 @@ function shortUrl(u: string): string {
   }
 }
 
-export function Theater({ jobId, initialStatus }: { jobId: string; initialStatus: string }) {
+export function Theater({
+  jobId,
+  initialStatus,
+  replay = false,
+}: {
+  jobId: string;
+  initialStatus: string;
+  replay?: boolean;
+}) {
   const [events, setEvents] = useState<StreamEvent[]>([]);
   const [status, setStatus] = useState(initialStatus);
   const [shot, setShot] = useState("");
@@ -25,7 +33,7 @@ export function Theater({ jobId, initialStatus }: { jobId: string; initialStatus
   const feedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const es = new EventSource(`/api/hunt/${jobId}/stream`);
+    const es = new EventSource(`/api/hunt/${jobId}/stream${replay ? "?replay=1" : ""}`);
     es.onmessage = (ev) => {
       const e = JSON.parse(ev.data) as StreamEvent;
       if (e.type === "step") {
@@ -41,7 +49,7 @@ export function Theater({ jobId, initialStatus }: { jobId: string; initialStatus
       setEvents((prev) => [...prev, e]);
     };
     return () => es.close();
-  }, [jobId]);
+  }, [jobId, replay]);
 
   useEffect(() => {
     feedRef.current?.scrollTo({ top: feedRef.current.scrollHeight });
@@ -87,7 +95,7 @@ export function Theater({ jobId, initialStatus }: { jobId: string; initialStatus
         </span>
 
         <div className="ml-auto flex items-center gap-2">
-          {!done && (
+          {!done && !replay && (
             <button
               onClick={stop}
               disabled={stopping}

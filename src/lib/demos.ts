@@ -23,3 +23,8 @@ export function isDemoUrl(url: string): boolean {
     return false;
   }
 }
+
+// A completed hunt replayed on /demo so visitors see the product working
+// instantly (no wait, no LLM cost). Override per-deployment via env.
+export const DEMO_JOB_ID =
+  process.env.NEXT_PUBLIC_DEMO_JOB_ID ?? "881772eb-1d58-4d7c-ac70-7f4ebe0a4e19";

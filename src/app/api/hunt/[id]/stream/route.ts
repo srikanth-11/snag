@@ -15,6 +15,7 @@ export async function GET(req: Request, ctx: RouteContext<"/api/hunt/[id]/stream
   const steps = await getSteps(supabase, id);
   const findings = await getFindings(supabase, id);
   const encoder = new TextEncoder();
+  const replay = new URL(req.url).searchParams.get("replay") === "1";
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -28,14 +29,49 @@ export async function GET(req: Request, ctx: RouteContext<"/api/hunt/[id]/stream
         }
       };
 
+      const terminal =
+        job.status === "done" || job.status === "error" || job.status === "stopped";
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+      // Cached demo: replay a finished hunt with cinematic pacing so visitors see
+      // the product working instantly (no wait, no LLM cost). Findings are dripped
+      // in proportionally as the steps play.
+      if (replay && terminal) {
+        await send({ type: "status", status: "running" });
+        const stepsToShow = steps.slice(0, 18);
+        const findsToShow = findings.slice(0, 20);
+        let fi = 0;
+        for (let i = 0; i < stepsToShow.length; i++) {
+          if (req.signal.aborted) return;
+          const s = stepsToShow[i];
+          await send({ type: "step", n: s.n, thought: s.thought, action: s.action, url: s.url, shot: s.screenshotPath });
+          await sleep(750);
+          const target = Math.floor(((i + 1) / stepsToShow.length) * findsToShow.length);
+          while (fi < target) {
+            if (req.signal.aborted) return;
+            await send({ type: "finding", finding: findsToShow[fi++] });
+            await sleep(320);
+          }
+        }
+        while (fi < findsToShow.length) {
+          if (req.signal.aborted) return;
+          await send({ type: "finding", finding: findsToShow[fi++] });
+          await sleep(320);
+        }
+        await sleep(500);
+        await send({ type: "status", status: "done" });
+        controller.close();
+        return;
+      }
+
       // Replay what already happened so a reconnecting client catches up.
       for (const s of steps) {
         await send({ type: "step", n: s.n, thought: s.thought, action: s.action, url: s.url, shot: s.screenshotPath });
       }
       for (const f of findings) await send({ type: "finding", finding: f });
 
-      if (job.status === "done" || job.status === "error") {
-        await send({ type: "status", status: job.status });
+      if (terminal) {
+        await send({ type: "status", status: job.status as "done" | "error" | "stopped" });
         controller.close();
         return;
       }
@@ -59,7 +95,10 @@ export async function GET(req: Request, ctx: RouteContext<"/api/hunt/[id]/stream
       let chain: Promise<void> = Promise.resolve();
       const unsub = subscribe(id, (e) => {
         chain = chain.then(() => send(e));
-        if (e.type === "status" && (e.status === "done" || e.status === "error")) {
+        if (
+          e.type === "status" &&
+          (e.status === "done" || e.status === "error" || e.status === "stopped")
+        ) {
           void chain.then(cleanup);
         }
       });

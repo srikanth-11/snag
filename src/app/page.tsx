@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Nav from "@/components/Nav";
 import UrlLauncher from "@/components/UrlLauncher";
 import { Hook, Wordmark } from "@/components/brand";
@@ -106,6 +107,15 @@ export default function Home() {
             engineer, catches the bugs your users would hit, and hands you a
             report you can ship.
           </p>
+
+          <div className="mt-6">
+            <Link
+              href="/demo"
+              className="inline-flex items-center gap-2 text-sm text-proof transition-opacity hover:opacity-80"
+            >
+              <span aria-hidden>▶</span> Watch a live demo
+            </Link>
+          </div>
 
           <div className="mt-12">
             <Stage />
