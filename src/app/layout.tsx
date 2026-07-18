@@ -18,10 +18,25 @@ const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const DESC =
+  "Paste a URL and Snag sends an AI agent through your live app like a hostile QA engineer, catching the real bugs your users would hit and handing you a report you can ship.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: "Snag: find the snags before your users do",
-  description:
-    "Paste a URL and Snag sends an AI agent through your live app like a hostile QA engineer, catching the real bugs your users would hit and handing you a report you can ship.",
+  description: DESC,
+  openGraph: {
+    title: "Snag: find the snags before your users do",
+    description: "An AI agent explores your live web app in a real browser and hunts real bugs, live.",
+    images: ["/og.png"],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Snag: find the snags before your users do",
+    description: "An AI agent explores your live web app in a real browser and hunts real bugs, live.",
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({

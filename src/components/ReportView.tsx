@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Finding, FindingCategory } from "@/lib/types";
+import { toast } from "sonner";
+import type { Finding, FindingCategory, Severity } from "@/lib/types";
 import { FindingCard } from "@/components/FindingCard";
 import { HealthRing } from "@/components/HealthRing";
 import { SEVERITY_ORDER } from "@/components/SeverityBadge";
@@ -28,6 +29,29 @@ const SEV_FILTERS: { label: string; max: number }[] = [
   { label: "High+", max: 1 },
   { label: "Critical", max: 0 },
 ];
+
+const SEV_ORDER: Severity[] = ["critical", "high", "medium", "low"];
+const SEV_TONE: Record<Severity, string> = {
+  critical: "border-ember/50 bg-ember/10 text-ember",
+  high: "border-ember/30 bg-ember/5 text-ember/90",
+  medium: "border-edge bg-bone/5 text-bone",
+  low: "border-edge text-smoke",
+};
+
+function verdictFor(grade: string): string {
+  switch (grade) {
+    case "A":
+      return "Solid. Only small things left to tidy up.";
+    case "B":
+      return "In good shape, with a handful worth fixing.";
+    case "C":
+      return "Some real issues to fix before your users hit them.";
+    case "D":
+      return "Notable problems worth a focused pass.";
+    default:
+      return "Significant issues found across the app.";
+  }
+}
 
 export default function ReportView({
   findings,
@@ -76,25 +100,73 @@ export default function ReportView({
       return n;
     });
 
+  const sev = useMemo(() => {
+    const s: Record<Severity, number> = { critical: 0, high: 0, medium: 0, low: 0 };
+    for (const f of findings) s[f.severity]++;
+    return s;
+  }, [findings]);
+  const topCat = (Object.keys(counts) as FindingCategory[]).sort((a, b) => counts[b] - counts[a])[0];
+
+  const share = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Report link copied.");
+    } catch {
+      toast.error("Couldn't copy the link.");
+    }
+  };
+
   return (
     <div>
-      {/* Score + coverage header */}
-      <div className="mt-6 flex flex-wrap items-center gap-6 rounded-xl border border-edge bg-ash/40 p-5">
-        <HealthRing score={score} grade={grade} />
-        <div className="min-w-0">
-          <p className="text-sm text-smoke">Health score</p>
-          <p className="mt-1 text-2xl font-bold">
-            {findings.length} {findings.length === 1 ? "issue" : "issues"} across {pages}{" "}
-            {pages === 1 ? "page" : "pages"}
-          </p>
-          <p className="mt-1 text-sm text-smoke">
-            Snag covers the checks a machine can run. You still own the business logic.
-          </p>
+      {/* Executive summary */}
+      <div className="mt-6 rounded-xl border border-edge bg-ash/40 p-5 sm:p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <HealthRing score={score} grade={grade} />
+          <div className="min-w-0 flex-1">
+            <p className="font-mono text-xs uppercase tracking-widest text-smoke">Verdict</p>
+            <p className="mt-1.5 font-display text-xl font-semibold leading-snug">
+              {verdictFor(grade)}
+            </p>
+            <p className="mt-1 text-sm text-smoke">
+              {findings.length} {findings.length === 1 ? "issue" : "issues"} across {pages}{" "}
+              {pages === 1 ? "page" : "pages"}
+              {topCat ? (
+                <>
+                  , most in <span className="text-bone">{CATEGORY_TITLE[topCat]}</span>
+                </>
+              ) : null}
+              .
+            </p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {SEV_ORDER.filter((s) => sev[s]).map((s) => (
+                <span
+                  key={s}
+                  className={`rounded-full border px-2.5 py-0.5 font-mono text-xs ${SEV_TONE[s]}`}
+                >
+                  {sev[s]} {s}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="flex shrink-0 gap-2 print:hidden">
+            <button
+              onClick={share}
+              className="rounded-lg border border-edge px-3.5 py-2 text-sm text-bone transition-colors hover:border-proof/50"
+            >
+              Share
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="rounded-lg bg-ember px-3.5 py-2 text-sm font-medium text-void transition-opacity hover:opacity-90"
+            >
+              Download PDF
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="mt-6 space-y-3">
+      <div className="mt-6 space-y-3 print:hidden">
         <div className="flex flex-wrap items-center gap-2">
           {CATEGORY_ORDER.filter((c) => counts[c]).map((c) => (
             <button

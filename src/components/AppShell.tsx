@@ -68,7 +68,7 @@ export default function AppShell({
   return (
     <div className="flex min-h-screen">
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col justify-between border-r border-edge bg-ash/30 p-5 md:flex">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col justify-between border-r border-edge bg-ash/30 p-5 md:flex print:!hidden">
         <div>
           <Link href="/" className="mb-8 inline-flex items-center gap-1.5 font-display text-xl font-bold">
             <Hook className="h-5 w-5 text-ember" />
@@ -80,7 +80,7 @@ export default function AppShell({
       </aside>
 
       {/* Mobile top bar */}
-      <div className="fixed inset-x-0 top-0 z-20 flex items-center justify-between border-b border-edge bg-void/95 px-4 py-3 backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 top-0 z-20 flex items-center justify-between border-b border-edge bg-void/95 px-4 py-3 backdrop-blur md:hidden print:hidden">
         <Link href="/" className="inline-flex items-center gap-1.5 font-display text-lg font-bold">
           <Hook className="h-5 w-5 text-ember" />
           snag
@@ -113,7 +113,7 @@ export default function AppShell({
         </div>
       )}
 
-      <main className="min-w-0 flex-1 pt-14 md:pt-0">{children}</main>
+      <main className="min-w-0 flex-1 pt-14 md:pt-0 print:pt-0">{children}</main>
     </div>
   );
 }

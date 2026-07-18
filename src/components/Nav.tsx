@@ -14,7 +14,7 @@ export default async function Nav() {
   }
 
   return (
-    <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
+    <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5 print:hidden">
       <Link href="/" aria-label="Snag home">
         <Wordmark />
       </Link>

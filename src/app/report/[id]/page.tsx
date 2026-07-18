@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import Nav from "@/components/Nav";
 import ReportView from "@/components/ReportView";
+import { Mark } from "@/components/brand";
 import { createClient } from "@/lib/supabase/server";
 import { getJob, getFindings, getSteps, findPreviousJobId } from "@/lib/db";
 import { dedupe, findingKey } from "@/lib/agent/dedupe";
@@ -47,6 +48,16 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
 
   const content = (
     <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
+        {/* Branded header, PDF only */}
+        <div className="mb-6 hidden items-center justify-between border-b border-edge pb-4 print:flex">
+          <span className="inline-flex items-center gap-2 font-display text-lg font-bold">
+            <Mark className="h-5 w-5" /> snag
+          </span>
+          <span className="font-mono text-xs text-smoke">
+            {new Date(job.createdAt).toLocaleString()}
+          </span>
+        </div>
+
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="font-mono text-xs uppercase tracking-widest text-smoke">Report</p>
@@ -54,7 +65,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           </div>
           <Link
             href="/#try"
-            className="shrink-0 rounded-lg border border-edge px-4 py-2 text-sm transition-colors hover:border-proof/50"
+            className="shrink-0 rounded-lg border border-edge px-4 py-2 text-sm transition-colors hover:border-proof/50 print:hidden"
           >
             Run again
           </Link>

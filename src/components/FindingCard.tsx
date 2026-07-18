@@ -63,7 +63,7 @@ export function FindingCard({ f }: { f: Finding }) {
   }
 
   return (
-    <div className="rounded-xl border border-edge bg-ash/40 p-5">
+    <div className="find-card rounded-xl border border-edge bg-ash/40 p-5">
       <div className="flex flex-wrap items-center gap-2">
         <SeverityBadge severity={f.severity} />
         <CategoryBadge category={f.category} />
@@ -104,6 +104,9 @@ export function FindingCard({ f }: { f: Finding }) {
           src={f.screenshotPath}
           alt="Screenshot at the moment the bug was found"
           className="mt-3 max-h-64 rounded border border-edge"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
         />
       )}
 
