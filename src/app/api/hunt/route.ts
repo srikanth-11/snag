@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabase, hasAnyLlm } from "@/lib/env";
 import { isSafeTarget } from "@/lib/ssrf";
@@ -6,22 +7,17 @@ import { remainingQuota } from "@/lib/quota";
 import { createJob } from "@/lib/db";
 import { startHunt } from "@/lib/hunt";
 import { PERSONA_KEYS } from "@/lib/agent/persona";
+import { isDemoUrl } from "@/lib/demos";
 import type { HuntAuth } from "@/lib/types";
 
 // Playwright + dns need the Node runtime.
 export const runtime = "nodejs";
 
+const DEMO_COOKIE = "snag_demo";
+
 export async function POST(req: Request) {
   if (!hasSupabase || !hasAnyLlm) {
     return NextResponse.json({ error: "Snag isn't configured on the server yet" }, { status: 503 });
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Log in to run a hunt" }, { status: 401 });
   }
 
   const body = (await req.json().catch(() => null)) as {
@@ -30,16 +26,49 @@ export async function POST(req: Request) {
     flows?: string[];
   } | null;
 
-  const flows = Array.isArray(body?.flows)
-    ? body.flows.filter((s) => typeof s === "string" && s.trim()).map((s) => s.trim()).slice(0, 4)
-    : undefined;
-
   const safe = await isSafeTarget(typeof body?.url === "string" ? body.url.trim() : "");
   if (!safe.ok) {
     return NextResponse.json({ error: safe.reason }, { status: 400 });
   }
 
-  // Optional login credentials — used in-memory only, never stored.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // --- Guest demo: one hunt against a pre-approved public app, no signup ---
+  if (!user) {
+    if (!isDemoUrl(safe.url)) {
+      return NextResponse.json(
+        { error: "Sign up to test your own app.", needSignup: true },
+        { status: 401 },
+      );
+    }
+    const jar = await cookies();
+    if (jar.get(DEMO_COOKIE)) {
+      return NextResponse.json(
+        { error: "You've used your free demo. Sign up to run more.", demoUsed: true },
+        { status: 403 },
+      );
+    }
+    const persona = PERSONA_KEYS[0];
+    const jobId = await createJob({ userId: null, url: safe.url, persona });
+    void startHunt({ jobId, url: safe.url, persona });
+    const res = NextResponse.json({ id: jobId });
+    res.cookies.set(DEMO_COOKIE, "1", {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    });
+    return res;
+  }
+
+  // --- Signed-in user: any safe URL, with quota, optional creds + flows ---
+  const flows = Array.isArray(body?.flows)
+    ? body.flows.filter((s) => typeof s === "string" && s.trim()).map((s) => s.trim()).slice(0, 4)
+    : undefined;
+
   let auth: HuntAuth | undefined;
   const rawAuth = body?.auth;
   if (rawAuth?.username && rawAuth.password) {
@@ -64,9 +93,6 @@ export async function POST(req: Request) {
 
   const persona = PERSONA_KEYS[quota.used % PERSONA_KEYS.length];
   const jobId = await createJob({ userId: user.id, url: safe.url, persona });
-
-  // Fire and forget — the client follows progress over SSE. Credentials are
-  // passed straight to the worker and never persisted with the job.
   void startHunt({ jobId, url: safe.url, persona, auth, flows });
 
   return NextResponse.json({ id: jobId });

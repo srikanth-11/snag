@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import Nav from "@/components/Nav";
 import ReportView from "@/components/ReportView";
 import { createClient } from "@/lib/supabase/server";
 import { getJob, getFindings, getSteps, findPreviousJobId } from "@/lib/db";
@@ -44,9 +45,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
     };
   }
 
-  return (
-    <AppShell email={user?.email ?? ""}>
-      <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
+  const content = (
+    <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="font-mono text-xs uppercase tracking-widest text-smoke">Report</p>
@@ -82,7 +82,15 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         ) : (
           <ReportView findings={findings} score={score} grade={grade} pages={Math.max(1, pages)} />
         )}
-      </main>
-    </AppShell>
+    </main>
+  );
+
+  return user ? (
+    <AppShell email={user.email ?? ""}>{content}</AppShell>
+  ) : (
+    <>
+      <Nav />
+      {content}
+    </>
   );
 }

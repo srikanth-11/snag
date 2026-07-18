@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-const DEMOS = [
-  { label: "demo-shop", path: "/seed/buggy-site" },
-  { label: "demo-docs", path: "/seed/demo-docs" },
-  { label: "demo-dash", path: "/seed/demo-dash" },
-];
+import { DEMO_TARGETS } from "@/lib/demos";
 
 export default function UrlLauncher() {
   const router = useRouter();
@@ -44,10 +39,6 @@ export default function UrlLauncher() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (res.status === 401) {
-        router.push("/signup?next=/");
-        return;
-      }
       const data = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
       if (!res.ok || !data.id) {
         setError(data.error ?? "Something went wrong. Try again.");
@@ -145,11 +136,11 @@ export default function UrlLauncher() {
       {error && <p className="mt-2 text-sm text-ember">{error}</p>}
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-smoke">
-        <span>try:</span>
-        {DEMOS.map((d) => (
+        <span>try one free, no signup:</span>
+        {DEMO_TARGETS.map((d) => (
           <button
-            key={d.label}
-            onClick={() => run(`${location.origin}${d.path}`)}
+            key={d.url}
+            onClick={() => run(d.url)}
             disabled={busy}
             className="rounded-full border border-edge px-3 py-1 font-mono text-xs text-bone transition-colors hover:border-proof/50 hover:text-proof disabled:opacity-60"
           >
