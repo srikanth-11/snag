@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import AppShell from "@/components/AppShell";
-import { NameForm, DeleteAccount } from "@/components/AccountForms";
+import { DeleteAccount } from "@/components/AccountForms";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabase } from "@/lib/env";
 import { remainingQuota } from "@/lib/quota";
@@ -23,20 +22,17 @@ export default async function SettingsPage() {
   if (!user) redirect("/login?next=/settings");
 
   const quota = await remainingQuota(user.id);
-  const name = ((user.user_metadata?.name as string | undefined) ?? "").trim();
   const pct = Math.min(100, Math.round((quota.used / quota.limit) * 100));
 
   return (
-    <AppShell email={user.email ?? ""}>
-      <div className="mx-auto max-w-2xl px-6 py-10">
+    <div className="mx-auto max-w-2xl px-6 py-10">
         <h1 className="font-display text-3xl font-bold">Settings</h1>
 
         <div className="mt-8 space-y-6">
           <Card title="Profile">
-            <p className="mb-4 text-sm text-smoke">
+            <p className="text-sm text-smoke">
               Signed in as <span className="text-bone">{user.email}</span>
             </p>
-            <NameForm initialName={name} />
           </Card>
 
           <Card title="Usage">
@@ -62,7 +58,6 @@ export default async function SettingsPage() {
             <DeleteAccount />
           </Card>
         </div>
-      </div>
-    </AppShell>
+    </div>
   );
 }

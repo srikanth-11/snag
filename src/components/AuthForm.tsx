@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { hasSupabase } from "@/lib/env";
 
@@ -36,6 +37,7 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
 
     if (error) {
       setMessage({ tone: "error", text: error.message });
+      toast.error(error.message);
       return;
     }
     if (mode === "signup") {
@@ -43,8 +45,10 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
         tone: "info",
         text: "Account created. Check your email to confirm, then log in.",
       });
+      toast.success("Account created. Check your email to confirm.");
       return;
     }
+    toast.success("Welcome back.");
     router.push(next);
     router.refresh();
   }

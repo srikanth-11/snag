@@ -8,7 +8,7 @@ export default function Loading() {
         ))}
       </div>
       <div className="mt-8 space-y-2">
-        {[0, 1, 2, 3, 4].map((i) => (
+        {[0, 1, 2, 3].map((i) => (
           <div key={i} className="h-14 animate-pulse rounded-xl border border-edge bg-ash/30" />
         ))}
       </div>

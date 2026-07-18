@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import AppShell from "@/components/AppShell";
 import HuntList from "@/components/HuntList";
 import { Sparkline } from "@/components/Sparkline";
 import { createClient } from "@/lib/supabase/server";
@@ -35,8 +34,7 @@ export default async function DashboardPage() {
     .map((j) => j.findingCount);
 
   return (
-    <AppShell email={user.email ?? ""}>
-      <div className="mx-auto max-w-5xl px-6 py-10">
+    <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="flex items-end justify-between gap-4">
           <h1 className="font-display text-3xl font-bold">Your hunts</h1>
           <Link
@@ -72,7 +70,6 @@ export default async function DashboardPage() {
             <HuntList jobs={jobs} />
           )}
         </div>
-      </div>
-    </AppShell>
+    </div>
   );
 }

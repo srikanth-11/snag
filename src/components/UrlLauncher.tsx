@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { DEMO_TARGETS } from "@/lib/demos";
 
 export default function UrlLauncher() {
@@ -41,13 +42,17 @@ export default function UrlLauncher() {
       });
       const data = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
       if (!res.ok || !data.id) {
-        setError(data.error ?? "Something went wrong. Try again.");
+        const msg = data.error ?? "Something went wrong. Try again.";
+        setError(msg);
+        toast.error(msg);
         setBusy(false);
         return;
       }
       router.push(`/hunt/${data.id}`);
     } catch {
-      setError("Couldn't reach the server. Try again.");
+      const msg = "Couldn't reach the server. Try again.";
+      setError(msg);
+      toast.error(msg);
       setBusy(false);
     }
   }
