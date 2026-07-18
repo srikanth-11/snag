@@ -15,6 +15,8 @@ export interface Driver {
   scanA11y?(uploadCrop?: (b64: string) => Promise<string>): Promise<Finding[]>;
   /** Optional one-time performance scan (LCP/CLS/TTFB). */
   scanPerf?(): Promise<Finding[]>;
+  /** Optional one-time responsive scan (mobile/tablet layout). */
+  scanResponsive?(): Promise<Finding[]>;
   dispose(): Promise<void>;
 }
 
@@ -125,6 +127,14 @@ export async function runHunt(opts: HuntOptions): Promise<Finding[]> {
   // One-time performance pass on the landing page.
   if (driver.scanPerf) {
     for (const f of await driver.scanPerf()) {
+      findings.push(f);
+      await emit({ type: "finding", finding: f });
+    }
+  }
+
+  // One-time responsive pass (mobile/tablet layout).
+  if (driver.scanResponsive) {
+    for (const f of await driver.scanResponsive()) {
       findings.push(f);
       await emit({ type: "finding", finding: f });
     }

@@ -30,6 +30,19 @@ const META: Record<string, { category: FindingCategory; severity: Severity; titl
     title: "Images without width/height (causes layout shift)",
   },
   "img-distorted": { category: "visual", severity: "low", title: "Images shown at a distorted aspect ratio" },
+  "email-type": { category: "ux", severity: "low", title: "Email field isn't a proper email input" },
+  "form-no-submit": { category: "ux", severity: "medium", title: "Form has no submit button" },
+};
+
+const SUGGEST: Record<string, string> = {
+  "font-hierarchy": "Set a clear type scale so each heading level is visibly smaller than the one above it.",
+  "tiny-fonts": "Use a base font size of at least 16px for body text.",
+  "type-scale": "Adopt a small set of font sizes (a type scale) and reuse them.",
+  "mixed-content": "Serve every resource over https, or use protocol-relative/https URLs.",
+  "img-dimensions": "Add width and height attributes (or CSS aspect-ratio) to images.",
+  "img-distorted": "Use object-fit: contain/cover or set matching dimensions so images aren't stretched.",
+  "email-type": 'Use <input type="email"> so the browser validates the format and shows the right keyboard.',
+  "form-no-submit": "Add a submit button so users can complete the form.",
 };
 
 // Deterministic DOM/visual audit for what axe doesn't cover: font hierarchy,
@@ -128,6 +141,35 @@ export async function runAudit(page: Page): Promise<Finding[]> {
           detail: `${distorted} image(s) are displayed at a distorted aspect ratio.`,
         });
 
+      // 6. Form structure — email fields that aren't email inputs, forms with no submit.
+      let emailFlagged = false;
+      let noSubmitFlagged = false;
+      document.querySelectorAll("form").forEach((form) => {
+        const fields = form.querySelectorAll("input, textarea, select");
+        const submit = form.querySelector(
+          "button:not([type='button']), input[type='submit'], [type='submit']",
+        );
+        if (fields.length && !submit && !noSubmitFlagged) {
+          noSubmitFlagged = true;
+          out.push({
+            kind: "form-no-submit",
+            detail: "A form has input fields but no submit button — users may be unable to submit it.",
+          });
+        }
+      });
+      document.querySelectorAll("input").forEach((el) => {
+        const type = (el.getAttribute("type") || "text").toLowerCase();
+        if (type !== "text") return;
+        const hint = `${el.getAttribute("name") || ""} ${el.getAttribute("id") || ""} ${el.getAttribute("placeholder") || ""}`.toLowerCase();
+        if (/e-?mail/.test(hint) && !emailFlagged) {
+          emailFlagged = true;
+          out.push({
+            kind: "email-type",
+            detail: 'An email field uses type="text" instead of type="email", so the browser won\'t validate the format.',
+          });
+        }
+      });
+
       return out;
     })) as RawIssue[];
 
@@ -143,6 +185,7 @@ export async function runAudit(page: Page): Promise<Finding[]> {
           detail: i.detail,
           evidence: i.evidence ?? [],
           repro: [],
+          suggestion: SUGGEST[i.kind],
           verified: true,
         } satisfies Finding;
       });

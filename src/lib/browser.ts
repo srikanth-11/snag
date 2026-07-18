@@ -7,6 +7,7 @@ import { attemptLogin } from "@/lib/agent/login";
 import { runAxe } from "@/lib/agent/a11y";
 import { runAudit } from "@/lib/agent/audit";
 import { runPerf } from "@/lib/agent/perf";
+import { runResponsive } from "@/lib/agent/responsive";
 
 let browser: Browser | null = null;
 
@@ -129,6 +130,7 @@ export async function createPlaywrightDriver(url: string, auth?: HuntAuth): Prom
       ...(await runAudit(page)),
     ],
     scanPerf: () => runPerf(page),
+    scanResponsive: () => runResponsive(page),
     dispose: async () => {
       obs.dispose();
       await context.close().catch(() => {});
